@@ -1,0 +1,11 @@
+[general]
+import = [
+    "~/.config/alacritty/themes/themes/gineikacc.toml"
+]
+[font]
+size = 12
+normal = { family = "Iosevka", style = "Regular" }
+
+[colors]
+selection = { text = "#FFFFFF", background = "#000000" }
+

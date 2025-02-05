@@ -1,0 +1,8 @@
+font-family = "Iosevka"
+background = 111111
+foreground = ffffff
+
+window-decoration = false
+background-opacity = 0.999
+window-padding-color = extend
+
