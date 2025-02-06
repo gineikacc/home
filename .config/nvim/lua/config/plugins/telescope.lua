@@ -20,7 +20,7 @@ return {
 			vim.keymap.set('n', "<leader>nh", require('telescope.builtin').help_tags)
 			vim.keymap.set('n', "<leader>nf", require('telescope.builtin').find_files)
 			vim.keymap.set('n', "<leader>nc", function()
-				require('telescope.builtin').find_files { cwd = vim.fn.stdpath("config") }
+				require('telescope.builtin').find_files { cwd = vim.fn.stdpath("config"), no_ignore = true }
 			end)
 			vim.keymap.set('n', "<leader>np", function()
 				require('telescope.builtin').find_files {
