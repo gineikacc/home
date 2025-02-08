@@ -1,0 +1,5 @@
+return {
+	{
+		"junegunn/vim-peekaboo"
+	}
+}

@@ -16,7 +16,6 @@ vim.keymap.set("v", "<leader>x", ":lua<CR>")
 
 
 -- Aldi filetree
-vim.keymap.set("n", "<leader>no", ":Lex<CR>")
 vim.g.netrw_winsize = -30
 
 
@@ -47,6 +46,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
 	callback = function(args)
 		local client = vim.lsp.get_client_by_id(args.data.client_id)
 		if not client then return end
+		---@diagnostic disable-next-line: missing-parameter, param-type-mismatch
 		if client.supports_method('textDocument/formatting') then
 			vim.api.nvim_create_autocmd('BufWritePre', {
 				buffer = args.buf,
@@ -81,6 +81,7 @@ vim.opt.number = true
 vim.opt.relativenumber = true
 vim.opt.shiftwidth = 4
 vim.opt.tabstop = 4
+vim.opt.smartcase = true
 
 
 -- Flash-highlight yanked text
@@ -101,10 +102,6 @@ function Enable_colorscheme_scroll()
 		table.insert(clist, scheme)
 	end
 
-	local function setColorScheme(index)
-		vim.cmd.colorscheme(clist[index])
-	end
-
 	vim.keymap.set('n', '<M-f>', function()
 		idx = idx - 1
 		vim.cmd.colorscheme(clist[idx])
@@ -118,6 +115,5 @@ function Enable_colorscheme_scroll()
 	end)
 end
 
--- Tmux background color override (Didn't work lol)
--- vim.opt.termguicolors = true
--- vim.opt.background = "dark" -- or "light"
+-- C-y yanks into plus buffer
+vim.keymap.set('v', '<C-y>', '"+y')
