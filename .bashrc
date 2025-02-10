@@ -5,6 +5,7 @@
 # If not running interactively, don't do anything
 [[ $- != *i* ]] && return
 
+export BROWSER="google-chrome-stable"
 
 # Set up fzf key bindings and fuzzy completion
 eval "$(fzf --bash)"

@@ -2,7 +2,8 @@ return {
 	{
 		"stevearc/oil.nvim",
 		config = function()
-			require("oil").setup({
+			local oil = require("oil")
+			oil.setup({
 				default_file_explorer = true,
 				columns = {
 					"icon",
@@ -38,7 +39,22 @@ return {
 					},
 				},
 			})
-			vim.keymap.set("n", "<leader>no", ":Oil<CR>")
+			local split_open = false
+			local oil_buf_nr = nil
+			local function split_oil()
+				if split_open then
+					vim.api.nvim_buf_delete(oil_buf_nr, {})
+				else
+					vim.cmd("vsplit")
+					vim.cmd("vertical resize 30")
+					oil.open()
+					oil_buf_nr = vim.api.nvim_get_current_buf()
+					vim.cmd("echo " .. oil_buf_nr)
+				end
+				split_open = not split_open
+			end
+
+			vim.keymap.set("n", "<leader>no", split_oil)
 		end
 	}
 }
