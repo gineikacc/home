@@ -12,7 +12,7 @@ return {
 		},
 		config = function()
 			local lspconfig = require("lspconfig")
-			local defaultSetups = { "gopls", "rust_analyzer", "ts_ls", "matlab_ls" }
+			local defaultSetups = { "gopls", "rust_analyzer", "ts_ls", "matlab_ls", "tailwindcss", "clojure_lsp" }
 			for _, value in ipairs(defaultSetups) do
 				lspconfig[value].setup {}
 			end
@@ -35,6 +35,11 @@ return {
 					},
 				},
 			}
+			--			local capabilities = vim.lsp.protocol.make_client_capabilities()
+			--			capabilities.textDocument.completion.completionItem.snippetSupport = true
+			--			require 'lspconfig'.cssls.setup {
+			--				capabilities = capabilities,
+			--			}
 		end
 	}
 }

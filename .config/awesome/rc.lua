@@ -238,6 +238,11 @@ root.buttons(gears.table.join(
 -- {{{ Key bindings
 globalkeys = gears.table.join(
 
+	awful.key({ modkey }, "z", function()
+		os.execute(
+			"bluetoothctl power off && rfkill unblock bluetooth && bluetoothctl power on && bluetoothctl connect 20:15:82:F1:60:22 && clear")
+	end, { description = "lock screen", group = "awesome" }),
+
 	awful.key({ modkey }, "u", function()
 		awful.spawn("i3lock-fancy")
 	end, { description = "lock screen", group = "awesome" }),
