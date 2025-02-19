@@ -1,6 +1,4 @@
 vim.g.mapleader = " "
-vim.g.maplocalleader = ","
-
 
 require("config.lazy")
 
@@ -29,9 +27,9 @@ local function toggleQF()
 		vim.cmd.copen()
 	end
 end
-vim.keymap.set("n", "<M-e>", toggleQF)
-vim.keymap.set("n", "<M-n>", "<cmd>cnext<CR>")
-vim.keymap.set("n", "<M-p>", "<cmd>cprev<CR>")
+vim.keymap.set("n", "<C-q>", toggleQF)
+vim.keymap.set("n", "<C-j>", "<cmd>cnext<CR>zz")
+vim.keymap.set("n", "<C-k>", "<cmd>cprev<CR>zz")
 
 
 -- Newline keybinds
@@ -115,5 +113,51 @@ function Enable_colorscheme_scroll()
 	end)
 end
 
--- C-y yanks into plus buffer
-vim.keymap.set('v', '<C-y>', '"+y')
+-- <l>y yanks into plus buffer
+vim.keymap.set("n", "<leader>Y", [["+Y]])
+vim.keymap.set({ "n", "v" }, "<leader>y", [["+y]])
+vim.keymap.set({ "n", "v" }, "<leader>d", [["_d]])
+
+-- Color technology
+vim.opt.colorcolumn = "80"
+vim.opt.cursorline = true
+
+-- Mustache man tech
+vim.keymap.set("v", "J", ":m '>+1<CR>gv=gv")
+vim.keymap.set("v", "K", ":m '<-2<CR>gv=gv")
+
+vim.keymap.set("n", "J", "mzJ`z")
+vim.keymap.set("n", "<C-d>", "<C-d>zz")
+vim.keymap.set("n", "<C-u>", "<C-u>zz")
+vim.keymap.set("n", "n", "nzzzv")
+vim.keymap.set("n", "N", "Nzzzv")
+
+-- greatest remap ever
+vim.keymap.set("x", "p", [["_dP]])
+
+vim.keymap.set("n", "Q", ":tabnew<CR>:Oil<CR>")
+
+-- GoLang tech
+vim.keymap.set(
+	"n",
+	"<leader>ee",
+	"oif err != nil {<CR>}<Esc>Oreturn err<Esc>"
+)
+
+vim.keymap.set(
+	"n",
+	"<leader>ea",
+	"oassert.NoError(err, \"\")<Esc>F\";a"
+)
+
+vim.keymap.set(
+	"n",
+	"<leader>ef",
+	"oif err != nil {<CR>}<Esc>Olog.Fatalf(\"error: %s\\n\", err.Error())<Esc>jj"
+)
+
+vim.keymap.set(
+	"n",
+	"<leader>el",
+	"oif err != nil {<CR>}<Esc>O.logger.Error(\"error\", \"error\", err)<Esc>F.;i"
+)

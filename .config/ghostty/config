@@ -1,5 +1,5 @@
 font-family = "Iosevka"
-background = 111111
+background = 000000 
 foreground = ffffff
 
 window-decoration = false

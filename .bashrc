@@ -76,3 +76,6 @@ alias viman='vim -c "h user-manual|only"'
 . "/home/blud/.deno/env"
 export PATH="/home/blud/.config/herd-lite/bin:$PATH"
 export PHP_INI_SCAN_DIR="/home/blud/.config/herd-lite/bin:$PHP_INI_SCAN_DIR"
+
+# Expo cli be buggin fr
+export ANDROID_HOME=/home/blud/Android/Sdk

@@ -27,6 +27,17 @@ return {
 					cwd = vim.fs.joinpath(vim.fn.stdpath("data"), "lazy")
 				}
 			end)
+
+			local builtin = require('telescope.builtin')
+			vim.keymap.set('n', '<leader>nw', function()
+				local word = vim.fn.expand("<cword>")
+				builtin.grep_string({ search = word })
+			end)
+			vim.keymap.set('n', '<leader>nW', function()
+				local word = vim.fn.expand("<cWORD>")
+				builtin.grep_string({ search = word })
+			end)
+
 			require "config.telescope.multigrep".setup()
 		end
 	}
