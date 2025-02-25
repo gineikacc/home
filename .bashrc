@@ -12,6 +12,7 @@ eval "$(fzf --bash)"
 export HOME="/home/blud" 
 export PATH="$PATH:$HOME/.local/bin" 
 export PATH="$PATH:/opt/nvim/" 
+export PATH=$(go env GOPATH)/bin:$PATH
 export LD_LIBRARY_PATH=/path/to/directory:$LD_LIBRARY_PATH
 
 alias ls='ls --color=auto'
@@ -56,6 +57,8 @@ alias us="setxkbmap us"
 alias cm="setxkbmap us -variant colemak_dh"
 alias kkk="setxkbmap gincc"
 alias cx="setxkbmap chromaxx"
+alias ss="setxkbmap -option caps:swapescape"
+
 alias night="redshift -l 55:24 &"
 
 alias t="tmux new-window"
