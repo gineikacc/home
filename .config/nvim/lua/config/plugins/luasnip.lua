@@ -48,9 +48,9 @@ return {
 				enable_autosnippets = true,
 			}
 
-			vim.keymap.set({ "i" }, "<leader>ae", function() ls.expand() end, { silent = true })
-			vim.keymap.set({ "i", "s" }, "<leader>an", function() ls.jump(1) end, { silent = true })
-			vim.keymap.set({ "i", "s" }, "<leader>ap", function() ls.jump(-1) end, { silent = true })
+			-- vim.keymap.set({ "i" }, "<leader>ae", function() ls.expand() end, { silent = true })
+			-- vim.keymap.set({ "i", "s" }, "<leader>an", function() ls.jump(1) end, { silent = true })
+			-- vim.keymap.set({ "i", "s" }, "<leader>ap", function() ls.jump(-1) end, { silent = true })
 
 			vim.keymap.set({ "i", "s" }, "<C-k>", function()
 				if ls.expand_or_jumpable() then
