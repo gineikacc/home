@@ -31,6 +31,7 @@ alias brc="vim ~/.bashrc"
 alias brcs="source ~/.bashrc"
 alias die="shutdown -h now"
 alias left='ls -t -1'
+alias lg='lazygit'
 alias lt='ls --human-readable --size -1 -S --classify'
 alias ll="pwd && lsd -lah"
 alias gh='history|grep'
