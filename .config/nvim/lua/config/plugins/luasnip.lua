@@ -37,6 +37,7 @@ return {
 			local ms = ls.multi_snippet
 			local k = require("luasnip.nodes.key_indexer").new_key
 
+			require("luasnip.loaders.from_vscode").lazy_load()
 
 
 			local ls = require("luasnip")
@@ -53,22 +54,45 @@ return {
 			-- vim.keymap.set({ "i", "s" }, "<leader>ap", function() ls.jump(-1) end, { silent = true })
 
 			vim.keymap.set({ "i", "s" }, "<C-k>", function()
-				if ls.expand_or_jumpable() then
-					ls.expand_or_jump()
+				if ls.jumpable(1) then
+					ls.jump(1)
+				elseif ls.expandable() then
+					ls.expand()
 				end
 			end, { silent = true })
 
-			ls.add_snippets("all", {
+			ls.add_snippets("js", {
 				s("ternary", {
 					i(1, "cond"), t(" ? "), i(2, "then"), t(" : "), i(3, "else")
 				}),
+			})
+			ls.add_snippets("go", {
 				s("ee", { t({
 					"if err != nil {",
 					"\treturn err",
 					"}",
-				})
+					"", })
+				}),
+				s("ef", { t({
+					"if err != nil {",
+					'\tlog.Fatalf("error: %s\\n", err.Error())',
+					"}",
+					"", })
 				}),
 			})
+
+			vim.keymap.set(
+				"n",
+				"<leader>ea",
+				"oassert.NoError(err, \"\")<Esc>F\";a"
+			)
+
+			vim.keymap.set(
+				"n",
+				"<leader>el",
+				"oif err != nil {<CR>}<Esc>O.logger.Error(\"error\", \"error\", err)<Esc>F.;i"
+
+			)
 		end,
 	}
 }
