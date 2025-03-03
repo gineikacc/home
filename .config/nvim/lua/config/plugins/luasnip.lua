@@ -81,18 +81,18 @@ return {
 				}),
 			})
 
-			vim.keymap.set(
-				"n",
-				"<leader>ea",
-				"oassert.NoError(err, \"\")<Esc>F\";a"
-			)
-
-			vim.keymap.set(
-				"n",
-				"<leader>el",
-				"oif err != nil {<CR>}<Esc>O.logger.Error(\"error\", \"error\", err)<Esc>F.;i"
-
-			)
+			-- vim.keymap.set(
+			-- 	"n",
+			-- 	"<leader>ea",
+			-- 	"oassert.NoError(err, \"\")<Esc>F\";a"
+			-- )
+			--
+			-- vim.keymap.set(
+			-- 	"n",
+			-- 	"<leader>el",
+			-- 	"oif err != nil {<CR>}<Esc>O.logger.Error(\"error\", \"error\", err)<Esc>F.;i"
+			--
+			-- )
 		end,
 	}
 }
