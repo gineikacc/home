@@ -543,3 +543,5 @@ end)
 -- Fast scroll
 --
 awful.spawn.with_shell("xset r rate 250 22")
+awful.spawn.with_shell("setxkbmap -option caps:swapescape")
+awful.spawn.with_shell("setxkbmap us -variant colemak_dh")
