@@ -5,6 +5,10 @@
 # If not running interactively, don't do anything
 [[ $- != *i* ]] && return
 
+# Python venv tech
+# - If on new system, python -m venv ~/.venv
+source ~/.venv/bin/activate
+
 export BROWSER="google-chrome-stable"
 
 # Set up fzf key bindings and fuzzy completion
@@ -71,10 +75,6 @@ alias heroic="flatpak run com.heroicgameslauncher.hgl"
 source ~/.config/bash-scripts/main.sh
 
 [[ -r "/usr/share/z/z.sh" ]] && source /usr/share/z/z.sh
-
-export PYENV_ROOT="$HOME/.pyenv"
-[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init -)"
 
 alias viman='vim -c "h user-manual|only"'
 . "/home/blud/.deno/env"
