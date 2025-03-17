@@ -71,6 +71,7 @@ alias t="tmux new-window"
 alias obsidian="flatpak run md.obsidian.Obsidian"
 alias runescape="flatpak run com.jagex.Runescape"
 alias heroic="flatpak run com.heroicgameslauncher.hgl"
+alias g3="flatpak run org.gimp.GIMP"
 
 source ~/.config/bash-scripts/main.sh
 
