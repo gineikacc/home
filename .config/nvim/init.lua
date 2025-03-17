@@ -136,5 +136,6 @@ vim.keymap.set("n", "N", "Nzzzv")
 vim.keymap.set("x", "p", [["_dP]])
 
 vim.keymap.set("n", "Q", ":tabnew<CR>:Oil<CR>")
+vim.keymap.set("n", "<leader>a", "maggVG")
 
 -- GoLang tech
