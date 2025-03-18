@@ -61,6 +61,11 @@ return {
 				end
 			end, { silent = true })
 
+			ls.add_snippets("", {
+				s("note", {
+					i(1, "begin"), t(" - "), i(2, "end"), t(" "), i(3, "note")
+				}),
+			})
 			ls.add_snippets("js", {
 				s("ternary", {
 					i(1, "cond"), t(" ? "), i(2, "then"), t(" : "), i(3, "else")
