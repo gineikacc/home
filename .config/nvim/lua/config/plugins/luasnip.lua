@@ -63,7 +63,7 @@ return {
 
 			ls.add_snippets("", {
 				s("note", {
-					i(1, "begin"), t(" - "), i(2, "end"), t(" "), i(3, "note")
+					i(1, "xxxx"), t(" "), i(2, "xxxx"), t(" "), i(3, "????")
 				}),
 			})
 			ls.add_snippets("js", {
