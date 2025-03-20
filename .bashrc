@@ -84,3 +84,11 @@ export PHP_INI_SCAN_DIR="/home/blud/.config/herd-lite/bin:$PHP_INI_SCAN_DIR"
 
 # Expo cli be buggin fr
 export ANDROID_HOME=/home/blud/Android/Sdk
+
+# pnpm
+export PNPM_HOME="/home/blud/.local/share/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+# pnpm end
