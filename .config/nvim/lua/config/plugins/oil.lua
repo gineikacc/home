@@ -4,7 +4,7 @@ return {
 		config = function()
 			local oil = require("oil")
 			oil.setup({
-				default_file_explorer = true,
+				default_file_explorer = false,
 				columns = {
 					"icon",
 					-- "permissions",
@@ -54,7 +54,7 @@ return {
 				split_open = not split_open
 			end
 
-			vim.keymap.set("n", "<leader>no", split_oil)
+			-- vim.keymap.set("n", "<leader>no", split_oil)
 		end
 	}
 }
