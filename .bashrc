@@ -35,6 +35,7 @@ alias brc="vim ~/.bashrc"
 alias brcs="source ~/.bashrc"
 alias die="shutdown -h now"
 alias lg='lazygit'
+alias gs='git status'
 alias lss='lsd -lahSr'
 alias lt='lsd -lahtr'
 alias ll="pwd && lsd -lah"
