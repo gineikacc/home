@@ -23,6 +23,7 @@ alias ls='ls --color=auto'
 alias grep='grep --color=auto'
 XDG_CONFIG_HOME="/home/blud/.config"
 gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+export GTK_THEME=Adwaita:dark
 CHROME=google-chrome-stable
 
 export PATH="$PATH:/opt/nvim-linux64/bin"
