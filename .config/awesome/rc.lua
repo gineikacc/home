@@ -545,3 +545,10 @@ end)
 awful.spawn.with_shell("xset r rate 250 22")
 awful.spawn.with_shell("setxkbmap -option caps:swapescape")
 awful.spawn.with_shell("setxkbmap us -variant colemak_dh")
+
+hostname = os.getenv("HOSTNAME") or "mule"
+if hostname == "mule" then
+	awful.spawn.with_shell("brightnessctl -d platform::mute set 0")
+	awful.spawn.with_shell("brightnessctl -d platform::micmute set 0")
+	awful.spawn.with_shell("brightnessctl -d tpacpi::power set 0")
+end
