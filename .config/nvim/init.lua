@@ -38,6 +38,8 @@ vim.keymap.set("i", "<C-M-j>", "<C-[>mjo<C-[>`ja")
 vim.keymap.set("n", "<C-M-k>", "mjO<C-[>`j")
 vim.keymap.set("i", "<C-M-k>", "<C-[>mjO<C-[>`ja")
 
+vim.keymap.set("v", "<leader>j", ":join<CR>")
+
 
 -- Format on save
 vim.api.nvim_create_autocmd('LspAttach', {
@@ -72,6 +74,11 @@ local function toggleDiagnostic()
 	vim.api.nvim_echo({ { msg, "None" } }, false, {})
 end
 vim.keymap.set("n", "<leader>ld", toggleDiagnostic, { noremap = true, silent = true })
+
+vim.keymap.set('n', '<leader>lw', function()
+	vim.wo.wrap = not vim.wo.wrap
+	vim.api.nvim_echo({ { "Wrap toggle", "None" } }, false, {})
+end, { desc = "Toggle line wrap" })
 
 
 -- Some meems
@@ -139,3 +146,12 @@ vim.keymap.set("n", "Q", ":tabnew<CR>:Oil<CR>")
 vim.keymap.set("n", "<leader>a", "maggVG")
 
 -- GoLang tech
+
+-- s34 asm syntax hack
+
+vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
+	pattern = "*.s43",
+	callback = function()
+		vim.bo.filetype = "asm"
+	end,
+})
