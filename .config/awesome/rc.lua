@@ -152,8 +152,8 @@ local tasklist_buttons = gears.table.join(
 
 local function set_wallpaper(s)
 	-- Wallpaper
-	local wallpaper = "/home/blud/Downloads/earth.png"
-	gears.wallpaper.maximized(wallpaper, s, true)
+	local wallpaper = "/home/blud/img/kitty.jpg"
+	gears.wallpaper.centered(wallpaper, s, false)
 end
 
 -- Re-set wallpaper when a screen's geometry changes (e.g. different resolution)
