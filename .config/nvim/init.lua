@@ -18,7 +18,7 @@ vim.g.netrw_winsize = -30
 
 
 -- Quickfix keymaps
-local qfActive = true
+local qfActive = false
 local function toggleQF()
 	qfActive = not qfActive
 	if qfActive then
