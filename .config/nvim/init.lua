@@ -160,3 +160,29 @@ vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
 vim.keymap.set("n", "<leader>o", "o<c-c>0C")
 vim.keymap.set("n", "<leader>O", "O<c-c>0C")
 
+-- Indentation shouldn't quit visual mode
+local function indent_smart(direction, mode)
+	local move;
+	local indent;
+	if direction == ">" then
+		move = "l"
+		indent = ">"
+	else
+		move = "h"
+		indent = "<"
+	end
+	if mode == "n" then
+		indent = indent .. indent
+	end
+
+	local movement = vim.bo.shiftwidth .. move
+	vim.api.nvim_feedkeys(indent .. movement, "n", false)
+	if mode == 'v' then
+		vim.api.nvim_feedkeys("gv", "n", false)
+	end
+end
+
+vim.keymap.set("v", ">", function() indent_smart(">", "v") end)
+vim.keymap.set("n", ">", function() indent_smart(">", "n") end)
+vim.keymap.set("n", "<", function() indent_smart("<", "n") end)
+vim.keymap.set("v", "<", function() indent_smart("<", "v") end)
