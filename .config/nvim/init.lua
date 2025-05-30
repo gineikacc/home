@@ -156,3 +156,7 @@ vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
 		vim.bo.filetype = "asm"
 	end,
 })
+
+vim.keymap.set("n", "<leader>o", "o<c-c>0C")
+vim.keymap.set("n", "<leader>O", "O<c-c>0C")
+
