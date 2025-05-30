@@ -6,6 +6,7 @@ require("config.lazy")
 -- Remove search highlights
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
+vim.keymap.set('n', '<leader>w', ':w<CR>')
 
 -- Sorce
 vim.keymap.set("n", "<leader><leader>x", "<cmd>source %<CR>")
