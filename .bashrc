@@ -14,9 +14,9 @@ export BROWSER="google-chrome-stable"
 # Set up fzf key bindings and fuzzy completion
 eval "$(fzf --bash)"
 export HOME="/home/blud" 
-export PATH="$PATH:$HOME/.local/bin" 
-export PATH="$PATH:/opt/nvim/" 
-export PATH=$(go env GOPATH)/bin:$PATH
+PATH="$PATH:$HOME/.local/bin" 
+PATH="$PATH:/opt/nvim/" 
+PATH=$(go env GOPATH)/bin:$PATH
 export LD_LIBRARY_PATH=/path/to/directory:$LD_LIBRARY_PATH
 
 alias ls='ls --color=auto'
@@ -26,7 +26,7 @@ gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
 export GTK_THEME=Adwaita:dark
 CHROME=google-chrome-stable
 
-export PATH="$PATH:/opt/nvim-linux64/bin"
+PATH="$PATH:/opt/nvim-linux64/bin"
 # PS1="\[\e[1;31m\]\u\[\e[1;32m\] \W \[\e[90m\]$ \[\e[m\]"
 PS1="\[\e[1;32m\]\W \[\e[90m\]$ \[\e[m\]"
 EDITOR="nvim"
@@ -81,7 +81,7 @@ source ~/.config/bash-scripts/main.sh
 
 alias viman='vim -c "h user-manual|only"'
 . "/home/blud/.deno/env"
-export PATH="/home/blud/.config/herd-lite/bin:$PATH"
+PATH="/home/blud/.config/herd-lite/bin:$PATH"
 export PHP_INI_SCAN_DIR="/home/blud/.config/herd-lite/bin:$PHP_INI_SCAN_DIR"
 
 # Expo cli be buggin fr
@@ -91,8 +91,14 @@ export ANDROID_HOME=/home/blud/Android/Sdk
 export PNPM_HOME="/home/blud/.local/share/pnpm"
 case ":$PATH:" in
   *":$PNPM_HOME:"*) ;;
-  *) export PATH="$PNPM_HOME:$PATH" ;;
+  *) PATH="$PNPM_HOME:$PATH" ;;
 esac
 # pnpm end
 
+function br() {
+	brightnessctl set $1%
+}
+export -f br
 
+
+export PATH
