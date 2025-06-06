@@ -82,6 +82,7 @@ source ~/.config/bash-scripts/main.sh
 alias viman='vim -c "h user-manual|only"'
 . "/home/blud/.deno/env"
 PATH="/home/blud/.config/herd-lite/bin:$PATH"
+PATH="/home/blud/code/scripts/:$PATH"
 export PHP_INI_SCAN_DIR="/home/blud/.config/herd-lite/bin:$PHP_INI_SCAN_DIR"
 
 # Expo cli be buggin fr
@@ -100,5 +101,7 @@ function br() {
 }
 export -f br
 
+# Ytdl tech
+alias ytdl='yt-dlp -f "bestvideo[height<=1080]+bestaudio/best[height<=1080]" -o "$HOME/yt/%(uploader)s/%(title)s.%(ext)s" --embed-metadata --embed-thumbnail --embed-subs --sub-langs "en" --fragment-retries 10 --merge-output-format mp4'
 
 export PATH
