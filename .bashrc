@@ -42,6 +42,7 @@ alias lt='lsd -lahtr'
 alias ll="pwd && lsd -lah"
 alias gh='history|grep'
 alias n="nvim"
+alias nn="sudo HOME=$HOME nvim"
 alias vim="nvim"
 alias vimrc="cd ~/.config/nvim/ && vim ."
 alias lampp="sudo /opt/lampp/manager-linux-x64.run"
@@ -103,5 +104,9 @@ export -f br
 
 # Ytdl tech
 alias ytdl='yt-dlp -f "bestvideo[height<=1080]+bestaudio/best[height<=1080]" -o "$HOME/yt/%(uploader)s/%(title)s.%(ext)s" --embed-metadata --embed-thumbnail --embed-subs --sub-langs "en" --fragment-retries 10 --merge-output-format mp4'
+
+# Colored yay
+export YAY_USE_COLORS=1
+export YAY_CONFIRM=0
 
 export PATH
