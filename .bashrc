@@ -102,6 +102,11 @@ function br() {
 }
 export -f br
 
+function mkcd() {
+  mkdir "$1" && cd "$1"
+}
+export -f mkcd
+
 # Ytdl tech
 alias ytdl='yt-dlp -f "bestvideo[height<=1080]+bestaudio/best[height<=1080]" -o "$HOME/yt/%(uploader)s/%(title)s.%(ext)s" --embed-metadata --embed-thumbnail --embed-subs --sub-langs "en" --fragment-retries 10 --merge-output-format mp4'
 
