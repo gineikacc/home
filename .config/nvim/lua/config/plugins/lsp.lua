@@ -44,6 +44,9 @@ return {
 				end
 			}
 			lspconfig.lua_ls.setup {
+				root_dir = function()
+					return vim.fn.getcwd() -- This sets the workspace root to $PWD
+				end,
 				settings = {
 					Lua = {
 						workspace = {
