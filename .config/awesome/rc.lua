@@ -17,6 +17,10 @@ local hotkeys_popup = require("awful.hotkeys_popup")
 -- when client with a matching name is opened:
 require("awful.hotkeys_popup.keys")
 
+-- Load environment variables from shell
+awful.spawn.with_shell("source ~/.bashrc")
+
+
 -- {{{ Error handling
 -- Check if awesome encountered an error during startup and fell back to
 -- another config (This code will only ever execute for the fallback config)
@@ -237,6 +241,11 @@ root.buttons(gears.table.join(
 
 -- {{{ Key bindings
 globalkeys = gears.table.join(
+
+	awful.key({ modkey }, "a", function()
+		awful.spawn(
+			"/home/blud/code/hofee/hofee")
+	end, { description = "lookup engine rofi thing", group = "awesome" }),
 
 	awful.key({ modkey }, "z", function()
 		awful.spawn.with_shell(
