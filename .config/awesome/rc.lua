@@ -255,7 +255,13 @@ globalkeys = gears.table.join(
 	awful.key({ modkey }, "u", function()
 		awful.spawn("i3lock-fancy")
 	end, { description = "lock screen", group = "awesome" }),
-	awful.key({ modkey }, "s", hotkeys_popup.show_help, { description = "show help", group = "awesome" }),
+	awful.key({ modkey, "Shift" }, "s", function()
+		awful.spawn.with_shell("flameshot full -p ~/scr/")
+	end, { description = "screenshot", group = "awesome" }),
+	awful.key({ modkey }, "s", function()
+		awful.spawn.with_shell("flameshot gui -p ~/scr/")
+	end, { description = "screenshot", group = "awesome" }),
+	-- awful.key({ modkey }, "s", hotkeys_popup.show_help, { description = "show help", group = "awesome" }),
 	awful.key({ modkey }, "Escape", awful.tag.history.restore, { description = "go back", group = "tag" }),
 	awful.key({ modkey }, "j", function()
 		awful.client.focus.byidx(1)
