@@ -12,7 +12,8 @@ source ~/.venv/bin/activate
 export BROWSER="google-chrome-stable"
 
 # Set up fzf key bindings and fuzzy completion
-eval "$(fzf --bash)"
+# eval "$(fzf --bash)"
+bind '"\C-t":"tms\n"'
 export HOME="/home/blud" 
 PATH="$PATH:$HOME/.local/bin" 
 PATH="$PATH:/opt/nvim/" 
