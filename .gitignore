@@ -33,8 +33,6 @@
 !/.config/alacritty/themes/themes/
 !/.config/alacritty/themes/themes/gineikacc.toml
 !/.config/rofi/
-!/.config/gtk-3.0/
-!/.config/gtk-3.0/*
 !/.config/gtk-3.0/settings.ini
 !/.config/gtk-4.0/
 !/.config/gtk-4.0/*
