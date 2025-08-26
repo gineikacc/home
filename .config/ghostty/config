@@ -1,9 +1,16 @@
 font-size = 19.0
 font-family = "Iosevka"
-background = 000000 
-foreground = ffffff
+
+background = "000000"
+foreground = "ffffff"
 
 window-decoration = false
 background-opacity = 0.999
-window-padding-color = extend
+window-padding-color = "extend"
+
+initial-command = "/home/blud/code/scripts/ghostty-exec.sh"
+
+confirm-close-surface = false
+keybind = super+c=quit
+
 
