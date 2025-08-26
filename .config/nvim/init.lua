@@ -43,6 +43,7 @@ vim.keymap.set("v", "<leader>j", ":join<CR>")
 
 
 -- Format on save
+local format_on_save = true;
 vim.api.nvim_create_autocmd('LspAttach', {
 	callback = function(args)
 		local client = vim.lsp.get_client_by_id(args.data.client_id)
@@ -52,13 +53,14 @@ vim.api.nvim_create_autocmd('LspAttach', {
 			vim.api.nvim_create_autocmd('BufWritePre', {
 				buffer = args.buf,
 				callback = function()
-					vim.lsp.buf.format({ bufnr = args.buf, id = client.id })
+					if format_on_save then
+						vim.lsp.buf.format({ bufnr = args.buf, id = client.id })
+					end
 				end,
 			})
 		end
 	end
 })
-vim.keymap.set("n", "<leader>lf", function() vim.lsp.buf.format() end)
 
 
 -- Diagnostics toggle
@@ -81,12 +83,23 @@ vim.keymap.set('n', '<leader>lw', function()
 	vim.api.nvim_echo({ { "Wrap toggle", "None" } }, false, {})
 end, { desc = "Toggle line wrap" })
 
+vim.keymap.set('n', '<leader>lfs', function()
+	format_on_save = not format_on_save;
+	if format_on_save then
+		vim.api.nvim_echo({ { "Format on save ON", "None" } }, false, {})
+	else
+		vim.api.nvim_echo({ { "Format on save OFF", "None" } }, false, {})
+	end
+end, { desc = "Toggle line wrap" })
+
+vim.keymap.set('n', '<leader>lft', function() vim.lsp.buf.format { async = true } end)
 
 -- Some meems
 vim.opt.number = true
 vim.opt.relativenumber = true
 vim.opt.shiftwidth = 4
 vim.opt.tabstop = 4
+vim.opt.ignorecase = true
 vim.opt.smartcase = true
 
 
@@ -186,3 +199,76 @@ vim.keymap.set("v", ">", function() indent_smart(">", "v") end)
 vim.keymap.set("n", ">", function() indent_smart(">", "n") end)
 vim.keymap.set("n", "<", function() indent_smart("<", "n") end)
 vim.keymap.set("v", "<", function() indent_smart("<", "v") end)
+
+
+-- tmux-sessionizer
+vim.keymap.set("n", "<C-t>", function()
+	local buf = vim.api.nvim_create_buf(false, true)
+	local width = math.floor(vim.o.columns * 0.8)
+	local height = math.floor(vim.o.lines * 0.8)
+
+	local win = vim.api.nvim_open_win(buf, true, {
+		relative = 'editor',
+		width = width,
+		height = height,
+		row = math.floor((vim.o.lines - height) / 2),
+		col = math.floor((vim.o.columns - width) / 2),
+		style = 'minimal',
+		border = 'rounded',
+	})
+
+	-- Run tmux-sessionizer with an on_exit hook
+	vim.fn.termopen("tms", {
+		on_exit = function(_, exit_code, _)
+			if exit_code == 0 then
+				vim.schedule(function()
+					-- Check if window is still valid before closing
+					if vim.api.nvim_win_is_valid(win) then
+						vim.api.nvim_win_close(win, true)
+					end
+				end)
+			end
+		end,
+	})
+
+	vim.cmd("startinsert")
+end, { noremap = true, silent = true })
+
+-- LSP keybinds
+vim.api.nvim_create_autocmd('LspAttach', {
+	callback = function(args)
+		local opts = { buffer = args.buf }
+		local keymap = vim.keymap.set
+		local tb = require('telescope.builtin')
+		--  Telescope-powered LSP navigation
+		keymap('n', 'gd', tb.lsp_definitions, opts)
+		keymap('n', 'grr', tb.lsp_references, opts)
+		keymap('n', 'gi', tb.lsp_implementations, opts)
+		keymap('n', 'gy', tb.lsp_type_definitions, opts)
+		-- Native LSP
+		keymap('n', 'gD', vim.lsp.buf.declaration, opts)
+		keymap('n', 'K', vim.lsp.buf.hover, opts)
+		keymap('n', '<C-k>', vim.lsp.buf.signature_help, opts)
+		keymap('n', '<leader>rn', vim.lsp.buf.rename, opts)
+		keymap('n', 'gra', vim.lsp.buf.code_action, opts)
+		-- Diagnostics
+		keymap('n', '[d', vim.diagnostic.goto_prev, opts)
+		keymap('n', ']d', vim.diagnostic.goto_next, opts)
+		keymap('n', '<leader>lo', vim.diagnostic.open_float, opts)
+		keymap('n', '<leader>q', function()
+			local loclist_open = false
+			for _, win in ipairs(vim.fn.getwininfo()) do
+				if win.loclist == 1 then
+					loclist_open = true
+					break
+				end
+			end
+
+			if loclist_open then
+				vim.cmd("lclose")
+			else
+				vim.diagnostic.setloclist { opts }
+			end
+		end, opts)
+	end
+})
