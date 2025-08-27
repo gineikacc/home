@@ -85,6 +85,7 @@ alias viman='vim -c "h user-manual|only"'
 . "/home/blud/.deno/env"
 PATH="/home/blud/.config/herd-lite/bin:$PATH"
 PATH="/home/blud/code/scripts/:$PATH"
+PATH="$PATH:/home/blud/.dotnet/tools"
 export PHP_INI_SCAN_DIR="/home/blud/.config/herd-lite/bin:$PHP_INI_SCAN_DIR"
 
 # Expo cli be buggin fr
