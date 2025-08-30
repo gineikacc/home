@@ -252,6 +252,11 @@ globalkeys = gears.table.join(
 			"bluetoothctl power off && rfkill unblock bluetooth && bluetoothctl power on && bluetoothctl connect 20:15:82:F1:60:22 && clear")
 	end, { description = "lock screen", group = "awesome" }),
 
+	awful.key({ modkey }, "'", function()
+		awful.spawn("google-chrome-stable", { tag = "1" })
+		awful.spawn(terminal, { tag = "3" })
+		awful.spawn("pavucontrol", { tag = "4" })
+	end, { description = "lock screen", group = "awesome" }),
 	awful.key({ modkey }, "u", function()
 		awful.spawn("i3lock-fancy")
 	end, { description = "lock screen", group = "awesome" }),
