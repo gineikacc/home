@@ -143,8 +143,9 @@ local tasklist_buttons = gears.table.join(
 			c:emit_signal("request::activate", "tasklist", { raise = true })
 		end
 	end),
-	awful.button({}, 3, function()
-		awful.menu.client_list({ theme = { width = 250 } })
+	awful.button({}, 3, function(c)
+		c.fullscreen = not c.fullscreen
+		c:raise()
 	end),
 	awful.button({}, 4, function()
 		awful.client.focus.byidx(1)
