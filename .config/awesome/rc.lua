@@ -284,9 +284,6 @@ globalkeys = gears.table.join(
 		awful.client.focus.byidx(-1)
 	end, { description = "focus previous by index", group = "client" }),
 	awful.key({ modkey }, "w", function()
-		mymainmenu:show()
-	end, { description = "show main menu", group = "awesome" }),
-	awful.key({ modkey }, "b", function()
 		wibar.visible = not wibar.visible
 	end, { description = "", group = "awesome" }),
 
