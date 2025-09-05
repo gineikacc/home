@@ -285,7 +285,7 @@ globalkeys = gears.table.join(
 	end, { description = "focus previous by index", group = "client" }),
 	awful.key({ modkey }, "w", function()
 		wibar.visible = not wibar.visible
-	end, { description = "", group = "awesome" }),
+	end, { description = "toggle wibar", group = "awesome" }),
 
 	-- Layout manipulation
 	awful.key({ modkey, "Shift" }, "j", function()
