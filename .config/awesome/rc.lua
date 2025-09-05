@@ -206,7 +206,8 @@ awful.screen.connect_for_each_screen(function(s)
 	})
 
 	-- Create the wibox
-	s.mywibox = awful.wibar({ position = "bottom", screen = s })
+	wibar = awful.wibar({ position = "bottom", screen = s })
+	s.mywibox = wibar
 
 	-- Add widgets to the wibox
 	s.mywibox:setup({
@@ -281,6 +282,9 @@ globalkeys = gears.table.join(
 	awful.key({ modkey }, "w", function()
 		mymainmenu:show()
 	end, { description = "show main menu", group = "awesome" }),
+	awful.key({ modkey }, "b", function()
+		wibar.visible = not wibar.visible
+	end, { description = "", group = "awesome" }),
 
 	-- Layout manipulation
 	awful.key({ modkey, "Shift" }, "j", function()
