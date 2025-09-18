@@ -61,11 +61,6 @@ terminal = "ghostty"
 editor = os.getenv("EDITOR") or "vim"
 editor_cmd = terminal .. " -e " .. editor
 
--- Default modkey.
--- Usually, Mod4 is the key with a logo between Control and Alt.
--- If you do not like this or do not have such a key,
--- I suggest you to remap Mod4 to another key using xmodmap or other tools.
--- However, you can use another modifier like Mod1, but it may interact with others.
 modkey = "Mod4"
 
 -- Table of layouts to cover with awful.layout.inc, order matters.
@@ -79,9 +74,6 @@ awful.layout.layouts = {
 	awful.layout.suit.tile.bottom,
 	awful.layout.suit.max,
 	awful.layout.suit.max.fullscreen,
-	-- awful.layout.suit.corner.ne,
-	-- awful.layout.suit.corner.sw,
-	-- awful.layout.suit.corner.se,
 }
 -- }}}
 
@@ -97,15 +89,13 @@ mymainmenu = awful.menu({
 })
 
 -- Menubar configuration
-menubar.utils.terminal = terminal -- Set the terminal for applications that require it
+menubar.utils.terminal = terminal
 -- }}}
 
 -- Keyboard map indicator and switcher
 mykeyboardlayout = awful.widget.keyboardlayout()
 
 -- {{{ Wibar
--- Create a textclock widget
--- format = ' %a %b.%d %H %M %S ',
 mytextclock = wibox.widget({
 	format = " %a %b.%d %H %M %S ",
 	widget = wibox.widget.textclock,
@@ -403,8 +393,6 @@ clientkeys = gears.table.join(
 		c.ontop = not c.ontop
 	end, { description = "toggle keep on top", group = "client" }),
 	awful.key({ modkey }, "n", function(c)
-		-- The client currently has the input focus, so it cannot be
-		-- minimized, since minimized clients can't have the focus.
 		c.minimized = true
 	end, { description = "minimize", group = "client" }),
 	awful.key({ modkey }, "m", function(c)
@@ -422,8 +410,6 @@ clientkeys = gears.table.join(
 )
 
 -- Bind all key numbers to tags.
--- Be careful: we use keycodes to make it work on any keyboard layout.
--- This should map on the top row of your keyboard, usually 1 to 9.
 for i = 1, 9 do
 	globalkeys = gears.table.join(
 		globalkeys,
