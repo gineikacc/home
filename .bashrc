@@ -60,6 +60,7 @@ alias btoff="bluetoothctl power off && clear"
 alias bton='rfkill unblock bluetooth && bluetoothctl power on \
             && bluetoothctl connect 20:15:82:F1:60:22 && clear'
 alias btoff="bluetoothctl power off && clear"
+alias raudio="systemctl --user restart pipewire"
 alias wifion=" nmcli dev wifi connect 'Redmi 13C'"
 alias wifilog="watch -n0 nmcli dev wifi list"
 alias scr="ffmpeg -f x11grab -video_size 1920x1080 -i $DISPLAY -vframes 1 screen.png"
