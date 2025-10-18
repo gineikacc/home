@@ -19,6 +19,7 @@ PATH="$PATH:$HOME/.local/bin"
 PATH="$PATH:/opt/nvim/" 
 PATH=$(go env GOPATH)/bin:$PATH
 export LD_LIBRARY_PATH=/path/to/directory:$LD_LIBRARY_PATH
+export JAVA_HOME=/usr/lib/jvm/java-8-openjdk
 
 alias ls='ls --color=auto'
 alias grep='grep --color=auto'
@@ -86,6 +87,7 @@ alias viman='vim -c "h user-manual|only"'
 PATH="/home/blud/.config/herd-lite/bin:$PATH"
 PATH="/home/blud/code/scripts/:$PATH"
 PATH="$PATH:/home/blud/.dotnet/tools"
+PATH="$PATH:/home/blud/opt/eclipse"
 export PHP_INI_SCAN_DIR="/home/blud/.config/herd-lite/bin:$PHP_INI_SCAN_DIR"
 
 # Expo cli be buggin fr
