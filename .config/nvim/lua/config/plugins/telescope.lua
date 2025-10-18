@@ -44,6 +44,9 @@ return {
 			vim.keymap.set('n', "<leader>nf", function()
 				require('telescope.builtin').find_files { hidden = true }
 			end)
+			vim.keymap.set('n', "<leader>nF", function()
+				require('telescope.builtin').find_files { hidden = true, no_ignore = true }
+			end)
 			vim.keymap.set('n', "<leader>nc", function()
 				require('telescope.builtin').find_files { cwd = vim.fn.stdpath("config"), no_ignore = true }
 			end)
