@@ -99,8 +99,9 @@ menubar.utils.terminal = terminal
 mykeyboardlayout = awful.widget.keyboardlayout()
 
 -- {{{ Wibar
+local clock_format = " %a %b.%d %H %M %S "
 mytextclock = wibox.widget({
-	format = " %a %b.%d %H %M %S ",
+	format = clock_format,
 	widget = wibox.widget.textclock,
 	refresh = 1,
 })
@@ -294,6 +295,13 @@ globalkeys = gears.table.join(
 			end
 		end
 	end, { description = "toggle border color", group = "awesome" }),
+	awful.key({ modkey, "Control" }, "c", function()
+		if mytextclock.format == clock_format then
+			mytextclock.format = " "
+		else
+			mytextclock.format = clock_format
+		end
+	end, { description = "toggle wibar", group = "awesome" }),
 
 	-- Layout manipulation
 	awful.key({ modkey, "Shift" }, "j", function()
