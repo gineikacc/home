@@ -13,6 +13,7 @@ local beautiful = require("beautiful")
 local naughty = require("naughty")
 local menubar = require("menubar")
 local hotkeys_popup = require("awful.hotkeys_popup")
+local client = client
 -- Enable hotkeys help widget for VIM and other apps
 -- when client with a matching name is opened:
 require("awful.hotkeys_popup.keys")
@@ -55,6 +56,8 @@ end
 -- {{{ Variable definitions
 -- Themes define colours, icons, font and wallpapers.
 beautiful.init(gears.filesystem.get_configuration_dir() .. "theme/default/theme.lua")
+local border_color = beautiful.border_focus
+local border_colored = true
 
 -- This is used later as the default terminal and editor to run.
 terminal = "ghostty"
@@ -276,6 +279,21 @@ globalkeys = gears.table.join(
 	awful.key({ modkey }, "w", function()
 		wibar.visible = not wibar.visible
 	end, { description = "toggle wibar", group = "awesome" }),
+	awful.key({ modkey }, "b", function()
+		if border_colored
+		then
+			beautiful.border_focus = "#000000"
+		else
+			beautiful.border_focus = border_color
+		end
+		border_colored = not border_colored
+
+		for _, c in ipairs(client.get()) do
+			if c == client.focus then
+				c.border_color = beautiful.border_focus
+			end
+		end
+	end, { description = "toggle border color", group = "awesome" }),
 
 	-- Layout manipulation
 	awful.key({ modkey, "Shift" }, "j", function()
@@ -555,8 +573,12 @@ client.connect_signal("mouse::enter", function(c)
 end)
 
 -- Border color change on focus
-client.connect_signal("focus", function(c) c.border_color = beautiful.border_focus end)
-client.connect_signal("unfocus", function(c) c.border_color = beautiful.border_normal end)
+function Border_focus(c) c.border_color = beautiful.border_focus end
+
+function Border_unfocus(c) c.border_color = beautiful.border_normal end
+
+client.connect_signal("focus", Border_focus)
+client.connect_signal("unfocus", Border_unfocus)
 
 -- Fast scroll
 --
