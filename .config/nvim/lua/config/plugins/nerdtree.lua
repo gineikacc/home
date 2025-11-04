@@ -2,7 +2,7 @@ return {
 	{
 		"preservim/nerdtree",
 		config = function()
-			vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
+			-- vim.g.NERDTreeHijackNetrw = 0
 			vim.keymap.set('n', '<leader>no', vim.cmd.NERDTreeToggle)
 			vim.keymap.set('n', '<leader>nv', vim.cmd.NERDTreeToggleVCS)
 		end,

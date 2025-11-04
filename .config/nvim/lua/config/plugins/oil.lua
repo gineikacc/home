@@ -4,7 +4,7 @@ return {
 		config = function()
 			local oil = require("oil")
 			oil.setup({
-				default_file_explorer = false,
+				default_file_explorer = true,
 				columns = {
 					"icon",
 					-- "permissions",
