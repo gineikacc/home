@@ -10,10 +10,15 @@ return {
 				-- 	topdelete    = { text = "‾" },
 				-- 	changedelete = { text = "~" },
 				-- },
-				current_line_blame = true, -- shows git blame inline
-				signcolumn         = true, -- show in sign column
-				numhl              = false, -- highlight line numbers
-				linehl             = false, -- highlight whole line
+				current_line_blame      = true, -- shows git blame inline
+				signcolumn              = true, -- show in sign column
+				numhl                   = false, -- highlight line numbers
+				linehl                  = false, -- highlight whole line
+				current_line_blame_opts = {
+					ignore_whitespace = true,
+					virt_text_pos     = "eol",
+					extra_opts        = { "-C" }
+				},
 			}
 		end
 	}
