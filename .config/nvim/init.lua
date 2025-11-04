@@ -48,13 +48,21 @@ vim.api.nvim_create_autocmd('LspAttach', {
 	callback = function(args)
 		local client = vim.lsp.get_client_by_id(args.data.client_id)
 		if not client then return end
-		---@diagnostic disable-next-line: missing-parameter, param-type-mismatch
 		if client.supports_method('textDocument/formatting') then
 			vim.api.nvim_create_autocmd('BufWritePre', {
 				buffer = args.buf,
 				callback = function()
-					if format_on_save then
-						vim.lsp.buf.format({ bufnr = args.buf, id = client.id })
+					if not format_on_save then return end
+					local eslint_available = vim.lsp.get_active_clients(
+						{ name = "eslint" })[1] ~= nil
+
+					if eslint_available then
+						vim.cmd("EslintFixAll")
+					else
+						vim.lsp.buf.format({
+							bufnr = args.buf,
+							id = client.id,
+						})
 					end
 				end,
 			})
