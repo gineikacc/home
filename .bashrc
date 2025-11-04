@@ -45,6 +45,7 @@ alias ll="pwd && lsd -lah"
 alias gh='history|grep'
 alias n="nvim"
 alias nn="sudo HOME=$HOME nvim"
+alias novimswap="rm -f ~/.local/state/nvim/swap/* ~/.config/nvim/swap/* /tmp/nvim*/swap/* "
 alias vim="nvim"
 alias vimrc="cd ~/.config/nvim/ && vim ."
 alias lampp="sudo /opt/lampp/manager-linux-x64.run"
