@@ -214,7 +214,8 @@ awful.screen.connect_for_each_screen(function(s)
 		s.mytasklist, -- Middle widget
 		{           -- Right widgets
 			layout = wibox.layout.fixed.horizontal,
-			awful.widget.watch('bash -c "acpi -b | grep -oP \'\\d+%\' | sed \'s/$/ /\'"'),
+			awful.widget.watch('bash -c "value=$(acpi -b | grep -o \'[0-9]\\+%\'); printf \' %s \\n\' \"$value\""', 60),
+
 			awful.widget.watch("bash -c \"free -h | awk '/Mem/ {print $3}' | sed '$ s/.$//' \""),
 			--            mykeyboardlayout,
 			mytextclock,
