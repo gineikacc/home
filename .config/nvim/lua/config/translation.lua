@@ -139,13 +139,15 @@ local function espeak_supported()
 	if espeak_voices ~= nil then
 		return espeak_voices
 	end
-	local ok, out = pcall(vim.fn.system, { "espeak-ng", "--voices" })
-	if not ok or vim.v.shell_error ~= 0 then
+	local ok, res = pcall(function()
+		return vim.system({ "espeak-ng", "--voices" }):wait()
+	end)
+	if not ok or res.code ~= 0 then
 		espeak_voices = false
 		return espeak_voices
 	end
 	espeak_voices = {}
-	for line in out:gmatch("[^\n]+") do
+	for line in (res.stdout or ""):gmatch("[^\n]+") do
 		local code = line:match("^%s*%d+%s+(%S+)")
 		if code then
 			espeak_voices[code] = true
@@ -369,13 +371,19 @@ local function ts_pick(title, list, clojure)
 	}):find()
 end
 
+-- Run cmd with input on stdin and return its stdout as a string ("" when the
+-- command printed nothing). Replaces vim.fn.system(); throws if cmd is missing.
+local function sys(cmd, input)
+	return vim.system(cmd, { stdin = input }):wait().stdout or ""
+end
+
 -- One annotated line: input (romaji) : translation. Romaji also lands in
 -- register a, the translation in register b.
 local function annotate(input)
-	local romaji = vim.fn.system({ "kakasi", "-Ja", "-Ka", "-Ha", "-i", "utf8" }, input)
+	local romaji = sys({ "kakasi", "-Ja", "-Ka", "-Ha", "-i", "utf8" }, input)
 	vim.fn.setreg("a", romaji)
 
-	local english = vim.fn.system({ "trans", "-b", M.state.targetCode .. ":" .. M.state.currentCode }, input)
+	local english = sys({ "trans", "-b", M.state.targetCode .. ":" .. M.state.currentCode }, input)
 	english = english:gsub("%s+$", "")
 	vim.fn.setreg("b", english)
 
@@ -453,7 +461,7 @@ function M.setup()
 			lines[i] = annotate(line)
 		end
 		local column_input = table.concat(lines, '\n')
-		local formatted_lines = vim.fn.system({ "column", "-t", "-s", ":", "-o", ":" }, column_input)
+		local formatted_lines = sys({ "column", "-t", "-s", ":", "-o", ":" }, column_input)
 		local formatted_lines_list = vim.split(formatted_lines, '\n', { plain = true })
 		vim.api.nvim_buf_set_lines(0, start_line, end_line, false, formatted_lines_list)
 	end, { silent = true })
