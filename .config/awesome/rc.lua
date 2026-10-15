@@ -342,6 +342,46 @@ globalkeys = gears.table.join(
 		awful.spawn.with_shell("scrot -s -f - | xclip -selection clipboard -target image/png")
 		-- awful.spawn.with_shell("flameshot gui -c")
 	end, { description = "screenshot (clipboard)", group = "awesome" }),
+	awful.key({ modkey, "Mod1" }, "s", function()
+		awful.spawn.easy_async_with_shell([[
+			FILEPATH=$(mktemp --dry-run --suffix=.png)
+			scrot -s -f $FILEPATH
+			cp $FILEPATH /tmp/scrot_newest.png
+			RESP=$(curl 'https://femboy.beauty/api/upload' -F file=@$FILEPATH)
+			LINK=$(echo $RESP | jq .link)
+			KEY=$(echo $RESP | jq .key)
+			DELETE="https://femboy.beauty/api/delete?key=${KEY//\"/}"
+			DATE=$(date +%Y/%m/%dT%H:%M:%S)
+			echo $RESP | jq .link | xargs xdg-open >/dev/null
+			echo -e "$DATE ${LINK//\"/} $DELETE" >> ~/scr/history.txt
+			echo "$LINK"
+			echo "$DELETE"
+		]],
+			function(stdout, _, _, _)
+				local lines = {}
+				for line in stdout:gmatch("[^\r\n]+") do table.insert(lines, line) end
+				local link = lines[1]
+				local delete = lines[2]
+
+				if true then return end
+				local n = naughty.notify({
+					icon = "/tmp/scrot_newest.png",
+					widget_template = {
+						{ id = "icon_role", widget = wibox.widget.imagebox, },
+					},
+				})
+
+				n.box:connect_signal("button::press", function(_, _, _, button)
+					if button == 1 then
+						awful.spawn.with_shell("xdg-open " .. link)
+					elseif button == 3 then
+						awful.spawn.with_shell("xdg-open " .. delete)
+					end
+				end)
+			end
+		)
+		-- awful.spawn.with_shell("flameshot gui -c")
+	end, { description = "screenshot (web)", group = "awesome" }),
 	awful.key({ modkey, "Shift", "Control" }, "s",
 		function()
 			hotkeys_popup.show_help(nil, awful.screen.focused())
