@@ -16,6 +16,11 @@ vim.keymap.set("v", "<leader>x", ":lua<CR>")
 -- quick make
 vim.keymap.set("n", "<leader>r", ":make<CR>")
 
+vim.keymap.set("n", "<leader>nu", function()
+	vim.cmd.packadd("nvim.undotree")
+	vim.cmd.Undotree()
+end)
+
 -- Aldi filetree
 vim.g.netrw_winsize = -30
 
