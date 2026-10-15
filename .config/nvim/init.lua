@@ -285,6 +285,21 @@ vim.api.nvim_create_autocmd('LspAttach', {
 				vim.diagnostic.setloclist { opts }
 			end
 		end, opts)
+		keymap('n', '<leader>Q', function()
+			local qflist_open = false
+			for _, win in ipairs(vim.fn.getwininfo()) do
+				if win.quickfix == 1 then
+					qflist_open = true
+					break
+				end
+			end
+
+			if qflist_open then
+				vim.cmd("cclose")
+			else
+				vim.diagnostic.setqflist { opts }
+			end
+		end, opts)
 	end
 })
 
