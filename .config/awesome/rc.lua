@@ -404,6 +404,11 @@ globalkeys = gears.table.join(
 	awful.key({ modkey }, "q", function()
 		awful.client.incwfact(-0.05)
 	end, { description = "shrink vertically", group = "awesome" }),
+	awful.key({ modkey }, "o", function()
+		local cmd = "xclip -selection clipboard -t image/png -o > /tmp/clip.png" .. "&&"
+				.. "gocr /tmp/clip.png 2>/dev/null | xclip -se clipboard"
+		awful.spawn.with_shell(cmd)
+	end, { description = "ocr of clipboard picture", group = "awesome" }),
 	awful.key({ modkey, "Shift", "Control" }, "s",
 		function()
 			hotkeys_popup.show_help(nil, awful.screen.focused())
