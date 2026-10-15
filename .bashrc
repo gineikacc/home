@@ -63,6 +63,7 @@ alias lampp="sudo /opt/lampp/manager-linux-x64.run"
 alias img="qimgv"
 
 
+alias woman="man"
 
 alias btr='bluetoothctl power off && rfkill unblock bluetooth && bluetoothctl power on \
             && bluetoothctl connect 20:15:82:F1:60:22 && clear'
