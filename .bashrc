@@ -42,6 +42,7 @@ alias gs='git status'
 alias lss='lsd -lahSr'
 alias lt='lsd -lahtr'
 alias ll="pwd && lsd -lah"
+alias lo='libreoffice'
 alias gh='history|grep'
 alias n="nvim"
 alias nn="sudo HOME=$HOME nvim"
