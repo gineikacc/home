@@ -30,6 +30,14 @@ return {
 						{ "name", "asc" },
 					},
 				},
+				lsp_file_methods = {
+					enabled = true,
+					timeout_ms = 1000,
+					autosave_changes = false,
+				},
+				skip_confirm_for_simple_edits = true,
+				keymaps = {
+				}
 			})
 			local split_open = true
 			local oil_buf_nr = nil
