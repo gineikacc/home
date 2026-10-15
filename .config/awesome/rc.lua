@@ -391,7 +391,7 @@ globalkeys = gears.table.join(
 		awful.screen.focused().mypromptbox:run()
 	end, { description = "run prompt", group = "launcher" }),
 
-	awful.key({ modkey }, "x", function()
+	awful.key({ modkey, "Control" }, "x", function()
 		awful.prompt.run({
 			prompt = "Run Lua code: ",
 			textbox = awful.screen.focused().mypromptbox.widget,
