@@ -259,7 +259,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
 		keymap('n', 'gD', vim.lsp.buf.declaration, opts)
 		keymap('n', 'K', vim.lsp.buf.hover, opts)
 		keymap('n', '<C-k>', vim.lsp.buf.signature_help, opts)
-		keymap('n', '<leader>rn', vim.lsp.buf.rename, opts)
+		keymap('n', 'gn', vim.lsp.buf.rename, opts)
 		keymap('n', 'gra', vim.lsp.buf.code_action, opts)
 		-- Diagnostics
 		keymap('n', '[d', vim.diagnostic.goto_prev, opts)
