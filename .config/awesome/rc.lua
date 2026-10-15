@@ -388,6 +388,9 @@ globalkeys = gears.table.join(
 	awful.key({ modkey, "Control" }, "u", function()
 		naughty.destroy_all_notifications()
 	end, { description = "clear notifications", group = "awesome" }),
+	awful.key({ modkey }, "e", function()
+		awful.spawn("xdotool mousemove 0 9999")
+	end, { description = "hide mouse (BOTTOM LEFT)", group = "awesome" }),
 	awful.key({ modkey, "Shift", "Control" }, "s",
 		function()
 			hotkeys_popup.show_help(nil, awful.screen.focused())
