@@ -398,6 +398,9 @@ globalkeys = gears.table.join(
 		awful.spawn("/home/blud/temp/gloomer/gloomer")
 		-- awful.spawn.with_shell("boomer")
 	end, { description = "boomer zoom", group = "launcher" }),
+	awful.key({ modkey }, "v", function()
+		awful.spawn.with_shell("source /home/blud/.config/bash-scripts/memepaste.sh; sleep 0.4;memepaste")
+	end, { description = "retard-proof paste", group = "awesome" }),
 	awful.key({ modkey, "Shift", "Control" }, "s",
 		function()
 			hotkeys_popup.show_help(nil, awful.screen.focused())
