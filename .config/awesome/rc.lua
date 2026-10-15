@@ -391,6 +391,9 @@ globalkeys = gears.table.join(
 	awful.key({ modkey }, "e", function()
 		awful.spawn("xdotool mousemove 0 9999")
 	end, { description = "hide mouse (BOTTOM LEFT)", group = "awesome" }),
+	awful.key({ modkey }, "/", function()
+		awful.spawn.with_shell("rofimoji --skin-tone ask --no-frecency --max-recent 0")
+	end, { description = "emoji picker", group = "launcher" }),
 	awful.key({ modkey, "Shift", "Control" }, "s",
 		function()
 			hotkeys_popup.show_help(nil, awful.screen.focused())
