@@ -64,6 +64,7 @@ alias img="qimgv"
 
 
 alias woman="man"
+alias pyweb="python -m http.server 8000 --bind 0.0.0.0"
 
 alias btr='bluetoothctl power off && rfkill unblock bluetooth && bluetoothctl power on \
             && bluetoothctl connect 20:15:82:F1:60:22 && clear'
