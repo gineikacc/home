@@ -71,6 +71,8 @@ alias xt='xrandr --output eDP-1 --auto --rotate normal'
 alias xb='xrandr --output eDP-1 --auto --rotate inverted'
 alias xl='xrandr --output eDP-1 --auto --rotate left'
 alias xr='xrandr --output eDP-1 --auto --rotate right'
+alias rate='xset r rate 200 30'
+
 alias tone='xrandr --output HDMI-2 --mode 1920x1080'
 alias muff='xrandr --output eDP-1 --off'
 alias gobig='xrandr --output HDMI-2 --mode 2560x1440 && xrandr --output eDP-1 --off'
