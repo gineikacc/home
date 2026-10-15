@@ -46,6 +46,7 @@ alias brcs="source ~/.bashrc"
 alias die="shutdown -h now"
 alias lg='lazygit'
 alias gs='git status'
+alias gitbog="git clean -f && git reset --hard"
 alias lss='lsd -lahSr'
 alias lt='lsd -lahtr'
 alias ll="pwd && lsd -lah"
