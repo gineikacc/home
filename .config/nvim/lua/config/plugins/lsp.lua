@@ -48,6 +48,12 @@ return {
 			-- 	cmd = { "/home/blud/.local/share/nvim/mason/bin/elixir-ls" },
 			-- }
 
+			lspconfig.eslint.setup {
+				settings = {
+					experimental = { useFlatConfig = true },
+					format = { enable = true },
+				}
+			}
 			lspconfig.clangd.setup {
 				cmd = { "clangd", "--fallback-style=LLVM" }, -- Ensures LLVM style (4 spaces)
 				on_attach = function(client, bufnr)
