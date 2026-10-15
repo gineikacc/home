@@ -394,6 +394,10 @@ globalkeys = gears.table.join(
 	awful.key({ modkey }, "/", function()
 		awful.spawn.with_shell("rofimoji --skin-tone ask --no-frecency --max-recent 0")
 	end, { description = "emoji picker", group = "launcher" }),
+	awful.key({ modkey }, "x", function()
+		awful.spawn("/home/blud/temp/gloomer/gloomer")
+		-- awful.spawn.with_shell("boomer")
+	end, { description = "boomer zoom", group = "launcher" }),
 	awful.key({ modkey, "Shift", "Control" }, "s",
 		function()
 			hotkeys_popup.show_help(nil, awful.screen.focused())
