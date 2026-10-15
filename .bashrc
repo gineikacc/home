@@ -21,6 +21,7 @@ export HOME="/home/blud"
 PATH="$PATH:$HOME/.local/bin" 
 PATH="$PATH:/opt/nvim/" 
 PATH="$PATH:~/.config/emacs/bin/"
+PATH=/home/blud/.opencode/bin:$PATH
 PATH=$(go env GOPATH)/bin:$PATH
 export LD_LIBRARY_PATH=/path/to/directory:$LD_LIBRARY_PATH
 export JAVA_HOME=/usr/lib/jvm/java-8-openjdk
