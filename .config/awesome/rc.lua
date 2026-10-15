@@ -243,6 +243,12 @@ globalkeys = gears.table.join(
 		awful.spawn(
 			"/home/blud/code/hofee/hofee")
 	end, { description = "lookup engine rofi thing", group = "awesome" }),
+	awful.key({ modkey, "Shift" }, "a", function()
+		awful.spawn.with_shell([[
+			term=$(xclip -o -se c)
+			xdg-open "http://wiktionary.org/wiki/${term}#French"
+		]])
+	end, { description = "wiktionary from clipboard", group = "awesome" }),
 
 	awful.key({ modkey }, "z", function()
 		awful.spawn.with_shell(
