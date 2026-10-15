@@ -563,7 +563,13 @@ awful.rules.rules = {
 				"pop-up",    -- e.g. Google Chrome's (detached) Developer Tools.
 			},
 		},
-		properties = { floating = true },
+		properties = {
+			floating = true,
+			ontop = true,
+			width = 700,
+			height = 500,
+			placement = awful.placement.centered
+		},
 	},
 
 	-- Add titlebars to normal clients and dialogs
