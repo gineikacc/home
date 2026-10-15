@@ -270,10 +270,9 @@ vim.api.nvim_create_autocmd('LspAttach', {
 		keymap('n', 'K', vim.lsp.buf.hover, opts)
 		keymap('n', '<C-k>', vim.lsp.buf.signature_help, opts)
 		keymap('n', 'gn', vim.lsp.buf.rename, opts)
-		keymap('n', 'gra', vim.lsp.buf.code_action, opts)
 		-- Diagnostics
-		keymap('n', '[d', vim.diagnostic.goto_prev, opts)
-		keymap('n', ']d', vim.diagnostic.goto_next, opts)
+		keymap('n', '[d', function() vim.diagnostic.jump({ count = -1, float = true }) end, opts)
+		keymap('n', ']d', function() vim.diagnostic.jump({ count = 1, float = true }) end, opts)
 		keymap('n', '<leader>lo', vim.diagnostic.open_float, opts)
 		keymap('n', '<leader>q', function()
 			local loclist_open = false
