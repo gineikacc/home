@@ -24,6 +24,7 @@ PATH="$PATH:~/.config/emacs/bin/"
 PATH=$(go env GOPATH)/bin:$PATH
 export LD_LIBRARY_PATH=/path/to/directory:$LD_LIBRARY_PATH
 export JAVA_HOME=/usr/lib/jvm/java-8-openjdk
+export MANWIDTH="80" 
 
 alias ls='ls --color=auto'
 alias grep='grep --color=auto'
