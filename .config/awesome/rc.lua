@@ -382,6 +382,9 @@ globalkeys = gears.table.join(
 		)
 		-- awful.spawn.with_shell("flameshot gui -c")
 	end, { description = "screenshot (web)", group = "awesome" }),
+	awful.key({ modkey, "Shift" }, "u", function()
+		awful.spawn("/home/blud/temp/memelock/memelock --stocks --stock=^GSPC,INTC,NVDA --min-blur=0 -b=0")
+	end, { description = "lock screen", group = "awesome" }),
 	awful.key({ modkey, "Shift", "Control" }, "s",
 		function()
 			hotkeys_popup.show_help(nil, awful.screen.focused())
