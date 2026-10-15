@@ -2,6 +2,9 @@
 # ~/.bashrc
 #
 
+GRC_ALIASES=true
+[[ -s "/etc/profile.d/grc.sh" ]] && source /etc/profile.d/grc.sh
+
 # If not running interactively, don't do anything
 [[ $- != *i* ]] && return
 
