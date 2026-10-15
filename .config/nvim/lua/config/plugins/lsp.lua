@@ -8,7 +8,7 @@ return {
 				ft = "lua",
 				opts = {
 					library = {
-						{ path = "${3rd}/luv/lubrary", words = { "vim%.uv" } },
+						{ path = "${3rd}/luv/library", words = { "vim%.uv" } },
 					},
 				},
 			},
@@ -20,41 +20,37 @@ return {
 			"saadparwaiz1/cmp_luasnip",
 		},
 		config = function()
-			local lspconfig = require("lspconfig")
-			local defaultSetups = { "gopls", "rust_analyzer", "ts_ls", "matlab_ls", "tailwindcss",
-				"clojure_lsp", "pyright", "emmet_language_server", "omnisharp", "cmake",
-				"texlab", "zls", "jdtls" }
 			local cmp = require('cmp')
 			local cmp_lsp = require("cmp_nvim_lsp")
-			local capabilities = vim.tbl_deep_extend(
-				"force",
-				{},
-				vim.lsp.protocol.make_client_capabilities(),
-				cmp_lsp.default_capabilities()
-			)
+			vim.lsp.config('*', {
+				capabilities = vim.tbl_deep_extend(
+					"force",
+					{},
+					vim.lsp.protocol.make_client_capabilities(),
+					cmp_lsp.default_capabilities()
+				),
+			})
 
-			for _, value in ipairs(defaultSetups) do
-				lspconfig[value].setup {}
-			end
+			vim.lsp.enable({ "gopls", "rust_analyzer", "ts_ls", "matlab_ls", "tailwindcss",
+				"clojure_lsp", "pyright", "emmet_language_server", "omnisharp", "cmake",
+				"texlab", "zls", "jdtls" })
 
-			lspconfig.elixirls.setup({
+			vim.lsp.config('elixirls', {
 				cmd = { vim.fn.stdpath("data") .. "/mason/packages/elixir-ls/language_server.sh" },
-
-				root_dir = lspconfig.util.root_pattern("mix.exs", ".git"),
-
+				root_markers = { "mix.exs", ".git" },
 				filetypes = { "elixir", "eelixir", "heex", "surface" },
 			})
 			-- lspconfig.elixirls.setup {
 			-- 	cmd = { "/home/blud/.local/share/nvim/mason/bin/elixir-ls" },
 			-- }
 
-			lspconfig.eslint.setup {
+			vim.lsp.config('eslint', {
 				settings = {
 					experimental = { useFlatConfig = true },
 					format = { enable = true },
 				}
-			}
-			lspconfig.clangd.setup {
+			})
+			vim.lsp.config('clangd', {
 				cmd = { "clangd", "--fallback-style=LLVM" }, -- Ensures LLVM style (4 spaces)
 				on_attach = function(client, bufnr)
 					-- Set indentation to 4 spaces explicitly
@@ -62,10 +58,10 @@ return {
 					vim.bo[bufnr].tabstop = 4
 					vim.bo[bufnr].expandtab = true -- Convert tabs to spaces
 				end
-			}
-			lspconfig.lua_ls.setup {
-				root_dir = function()
-					return vim.fn.getcwd() -- This sets the workspace root to $PWD
+			})
+			vim.lsp.config('lua_ls', {
+				root_dir = function(_, on_dir)
+					on_dir(vim.fn.getcwd())
 				end,
 				settings = {
 					Lua = {
@@ -75,7 +71,7 @@ return {
 						},
 					},
 				},
-			}
+			})
 			local cmp_select = { behavior = cmp.SelectBehavior.Select }
 
 			cmp.setup({

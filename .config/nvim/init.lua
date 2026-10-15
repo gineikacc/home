@@ -55,16 +55,16 @@ vim.api.nvim_create_autocmd('LspAttach', {
 	callback = function(args)
 		local client = vim.lsp.get_client_by_id(args.data.client_id)
 		if not client then return end
-		if client.supports_method('textDocument/formatting') then
+		if client:supports_method('textDocument/formatting') then
 			vim.api.nvim_create_autocmd('BufWritePre', {
-				buffer = args.buf,
+				buf = args.buf,
 				callback = function()
 					if not format_on_save then return end
-					local eslint_available = vim.lsp.get_active_clients(
+					local eslint_available = vim.lsp.get_clients(
 						{ name = "eslint" })[1] ~= nil
 
 					if eslint_available then
-						vim.cmd("EslintFixAll")
+						vim.cmd("LspEslintFixAll")
 					else
 						vim.lsp.buf.format({
 							bufnr = args.buf,
@@ -128,7 +128,7 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 	desc = 'Highlight when yanking (copying) text',
 	group = vim.api.nvim_create_augroup('highlight-yank', { clear = true }),
 	callback = function()
-		vim.highlight.on_yank()
+		vim.hl.on_yank()
 	end,
 })
 
@@ -238,7 +238,8 @@ vim.keymap.set("n", "<C-t>", function()
 	})
 
 	-- Run tmux-sessionizer with an on_exit hook
-	vim.fn.termopen("tms", {
+	vim.fn.jobstart("tms", {
+		term = true,
 		on_exit = function(_, exit_code, _)
 			if exit_code == 0 then
 				vim.schedule(function()
@@ -257,7 +258,7 @@ end, { noremap = true, silent = true })
 -- LSP keybinds
 vim.api.nvim_create_autocmd('LspAttach', {
 	callback = function(args)
-		local opts = { buffer = args.buf }
+		local opts = { buf = args.buf }
 		local keymap = vim.keymap.set
 		local tb = require('telescope.builtin')
 		--  Telescope-powered LSP navigation
@@ -286,7 +287,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
 			if loclist_open then
 				vim.cmd("lclose")
 			else
-				vim.diagnostic.setloclist { opts }
+				vim.diagnostic.setloclist()
 			end
 		end, opts)
 		keymap('n', '<leader>Q', function()
@@ -301,7 +302,7 @@ vim.api.nvim_create_autocmd('LspAttach', {
 			if qflist_open then
 				vim.cmd("cclose")
 			else
-				vim.diagnostic.setqflist { opts }
+				vim.diagnostic.setqflist()
 			end
 		end, opts)
 	end

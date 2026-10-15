@@ -25,14 +25,14 @@ return {
 					map('n', '[c', function()
 						gs.prev_hunk()
 						vim.api.nvim_feedkeys('zz', 'n', false)
-					end, { buffer = bufnr })
+					end, { buf = bufnr })
 					map('n', ']c', function()
 						gs.next_hunk()
 						vim.api.nvim_feedkeys('zz', 'n', false)
-					end, { buffer = bufnr })
-					map('n', '<leader>hc', gs.stage_hunk, { buffer = bufnr })
-					map('n', '<leader>hr', gs.reset_hunk, { buffer = bufnr })
-					map('n', '<M-h>', gs.preview_hunk, { buffer = bufnr })
+					end, { buf = bufnr })
+					map('n', '<leader>hc', gs.stage_hunk, { buf = bufnr })
+					map('n', '<leader>hr', gs.reset_hunk, { buf = bufnr })
+					map('n', '<M-h>', gs.preview_hunk, { buf = bufnr })
 				end
 			}
 		end
