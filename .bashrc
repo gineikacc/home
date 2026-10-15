@@ -81,6 +81,7 @@ alias heroic="flatpak run com.heroicgameslauncher.hgl"
 alias g3="flatpak run org.gimp.GIMP"
 
 source ~/.config/bash-scripts/main.sh
+source ~/.config/keys.env
 
 [[ -r "/usr/share/z/z.sh" ]] && source /usr/share/z/z.sh
 
