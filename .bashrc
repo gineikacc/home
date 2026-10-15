@@ -160,3 +160,7 @@ export YAY_USE_COLORS=1
 export YAY_CONFIRM=0
 
 export PATH
+
+tldr() {
+    /usr/bin/tldr --color always "$@" | sed '/^[[:space:]]*$/d'
+}
