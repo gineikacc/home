@@ -204,6 +204,30 @@ awful.screen.connect_for_each_screen(function(s)
 	wibar = awful.wibar({ position = "bottom", screen = s })
 	s.mywibox = wibar
 
+
+	-- low battery warning
+	local battery_pct = io.open("/sys/class/power_supply/BAT0/capacity"):read("*n")
+	gears.timer {
+		timeout = 10,
+		autostart = true,
+		callback = function()
+			local capacity = io.open("/sys/class/power_supply/BAT0/capacity"):read("*n")
+			if capacity <= 20 and battery_pct > 20
+					or capacity <= 10 and battery_pct > 10
+					or capacity <= 5 and battery_pct > 5 then
+				naughty.notify({
+					preset = naughty.config.presets.critical,
+					title = capacity .. "% -- Low Battery",
+					text = "Bottom text",
+					fg = "#000000",
+					border_width = 5,
+					margin = 10
+				})
+			end
+			battery_pct = capacity
+		end
+	}
+
 	-- Add widgets to the wibox
 	s.mywibox:setup({
 		layout = wibox.layout.align.horizontal,
