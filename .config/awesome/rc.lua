@@ -253,6 +253,21 @@ awful.screen.connect_for_each_screen(function(s)
 			battery_widget.markup = " " .. tostring(capacity) .. percent_sign_markup
 		end
 	}
+
+	local mem_widget = wibox.widget.textbox()
+	gears.timer {
+		timeout = 5,
+		autostart = true,
+		callback = function()
+			awful.spawn.easy_async_with_shell(
+				"free -h | awk '/Mem/ {print $3}' | sed '$ s/.$//'",
+				function(out)
+					mem_widget.text = out
+				end
+			)
+		end
+	}
+
 	-- Add widgets to the wibox
 	s.mywibox:setup({
 		layout = wibox.layout.align.horizontal,
@@ -265,7 +280,7 @@ awful.screen.connect_for_each_screen(function(s)
 		{           -- Right widgets
 			layout = wibox.layout.fixed.horizontal,
 			battery_widget,
-			awful.widget.watch("bash -c \"free -h | awk '/Mem/ {print $3}' | sed '$ s/.$//' \""),
+			mem_widget,
 			--            mykeyboardlayout,
 			mytextclock,
 			wibox.widget.systray(),
