@@ -254,6 +254,9 @@ globalkeys = gears.table.join(
 		awful.spawn.with_shell(
 			"bluetoothctl power off && rfkill unblock bluetooth && bluetoothctl power on && bluetoothctl connect 20:15:82:F1:60:22 && clear")
 	end, { description = "connect to Airbuds", group = "awesome" }),
+	awful.key({ modkey, "Shift" }, "z", function()
+		awful.spawn.with_shell("bluetoothctl power off")
+	end, { description = "connect to Airbuds", group = "awesome" }),
 
 	awful.key({ modkey }, "'", function()
 		awful.spawn("google-chrome-stable", { tag = "1" })
