@@ -96,11 +96,12 @@ menubar.utils.terminal = terminal
 -- }}}
 
 -- Keyboard map indicator and switcher
-mykeyboardlayout = awful.widget.keyboardlayout()
+local mykeyboardlayout = awful.widget.keyboardlayout()
 
 -- {{{ Wibar
 local clock_format = " %a %b.%d %H %M %S "
-mytextclock = wibox.widget({
+
+local mytextclock = wibox.widget({
 	format = clock_format,
 	widget = wibox.widget.textclock,
 	refresh = 1,
