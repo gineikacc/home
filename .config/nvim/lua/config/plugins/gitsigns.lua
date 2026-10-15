@@ -19,6 +19,21 @@ return {
 					virt_text_pos     = "eol",
 					extra_opts        = { "-C" }
 				},
+				on_attach               = function(bufnr)
+					local gs = package.loaded.gitsigns
+					local map = vim.keymap.set
+					map('n', '[c', function()
+						gs.prev_hunk()
+						vim.api.nvim_feedkeys('zz', 'n', false)
+					end, { buffer = bufnr })
+					map('n', ']c', function()
+						gs.next_hunk()
+						vim.api.nvim_feedkeys('zz', 'n', false)
+					end, { buffer = bufnr })
+					map('n', '<leader>hc', gs.stage_hunk, { buffer = bufnr })
+					map('n', '<leader>hr', gs.reset_hunk, { buffer = bufnr })
+					map('n', '<M-h>', gs.preview_hunk, { buffer = bufnr })
+				end
 			}
 		end
 	}
