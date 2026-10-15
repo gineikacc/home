@@ -112,6 +112,11 @@ vim.opt.tabstop = 4
 vim.opt.ignorecase = true
 vim.opt.smartcase = true
 
+vim.opt.listchars = {
+	tab = '→  ',
+	nbsp = '+',
+	space = '·'
+}
 
 -- Flash-highlight yanked text
 vim.api.nvim_create_autocmd('TextYankPost', {
