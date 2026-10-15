@@ -66,6 +66,10 @@ alias img="qimgv"
 alias woman="man"
 alias pyweb="python -m http.server 8000 --bind 0.0.0.0"
 
+alias xt='xrandr --output eDP-1 --auto --rotate normal'
+alias xb='xrandr --output eDP-1 --auto --rotate inverted'
+alias xl='xrandr --output eDP-1 --auto --rotate left'
+alias xr='xrandr --output eDP-1 --auto --rotate right'
 alias btr='bluetoothctl power off && rfkill unblock bluetooth && bluetoothctl power on \
             && bluetoothctl connect 20:15:82:F1:60:22 && clear'
 alias btx='btr && exit'
