@@ -526,6 +526,25 @@ awful.rules.rules = {
 		},
 	},
 	{
+		rule = { instance = "cronpopup" },
+		properties = {
+			floating = true,
+			focus = false,
+			ontop = true,
+			sticky = true,
+			placement = function(c)
+				awful.placement.centered(c)
+
+				local g = c:geometry()
+				c:geometry({
+					x = g.x + 0,
+					y = g.y - 350,
+				})
+			end,
+		},
+
+	},
+	{
 		rule = { class = "Alt1" },
 		properties = {
 			floating = true,
