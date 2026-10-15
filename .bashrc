@@ -79,6 +79,7 @@ alias obsidian="flatpak run md.obsidian.Obsidian"
 alias runescape="flatpak run com.jagex.Runescape"
 alias heroic="flatpak run com.heroicgameslauncher.hgl"
 alias g3="flatpak run org.gimp.GIMP"
+alias stremio='flatpak run com.stremio.Stremio'
 
 source ~/.config/bash-scripts/main.sh
 source ~/.config/keys.env
