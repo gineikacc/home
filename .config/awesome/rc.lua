@@ -228,6 +228,31 @@ awful.screen.connect_for_each_screen(function(s)
 		end
 	}
 
+
+	-- battery + clock widget
+	local battery_widget = wibox.widget.textbox()
+	gears.timer {
+		timeout = 1,
+		autostart = true,
+		callback = function()
+			local capacity = io.open("/sys/class/power_supply/BAT0/capacity"):read("*n")
+			local status = io.open("/sys/class/power_supply/BAT0/status"):read("*l")
+			local status_color = "#0000ff"
+			local status_mapping = {
+				["Charging"]     = function() status_color = "#00ff00" end,
+				["Discharging"]  = function() status_color = "#ff0000" end,
+				["Not charging"] = function() status_color = "#ffff00" end,
+				default          = function() status_color = "#ffffff" end
+			}
+			if status_mapping[status] then
+				status_mapping[status]()
+			else
+				status_mapping.default()
+			end
+			local percent_sign_markup = string.format('<span color="%s">%%</span> ', status_color)
+			battery_widget.markup = " " .. tostring(capacity) .. percent_sign_markup
+		end
+	}
 	-- Add widgets to the wibox
 	s.mywibox:setup({
 		layout = wibox.layout.align.horizontal,
@@ -239,8 +264,7 @@ awful.screen.connect_for_each_screen(function(s)
 		s.mytasklist, -- Middle widget
 		{           -- Right widgets
 			layout = wibox.layout.fixed.horizontal,
-			awful.widget.watch('bash -c "value=$(acpi -b | grep -o \'[0-9]\\+%\'); printf \' %s \\n\' \"$value\""', 60),
-
+			battery_widget,
 			awful.widget.watch("bash -c \"free -h | awk '/Mem/ {print $3}' | sed '$ s/.$//' \""),
 			--            mykeyboardlayout,
 			mytextclock,
