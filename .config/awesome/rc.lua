@@ -264,7 +264,7 @@ globalkeys = gears.table.join(
 		awful.spawn("pavucontrol", { tag = "4" })
 	end, { description = "startup program", group = "awesome" }),
 	awful.key({ modkey }, "u", function()
-		awful.spawn("i3lock-fancy")
+		awful.spawn("/home/blud/temp/memelock/memelock --stocks --stock=^GSPC,INTC,NVDA,TSLA ")
 	end, { description = "lock screen", group = "awesome" }),
 	awful.key({ modkey, "Shift" }, "s", function()
 		awful.spawn.with_shell("flameshot full -p ~/scr/")
