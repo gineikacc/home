@@ -99,7 +99,7 @@ menubar.utils.terminal = terminal
 local mykeyboardlayout = awful.widget.keyboardlayout()
 
 -- {{{ Wibar
-local clock_format = " %a %b.%d %H %M %S "
+local clock_format = " %a %-m月%-d %H %M %S "
 
 local mytextclock = wibox.widget({
 	format = clock_format,
