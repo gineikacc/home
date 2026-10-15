@@ -77,7 +77,31 @@ return {
 					{ name = 'luasnip' }, -- For luasnip users.
 				}, {
 					{ name = 'buffer' },
-				})
+				}),
+				sorting = {
+					priority_weight = 2,
+					comparators = {
+						-- (1 Text) (2 Method) (3 Function) (4 Constructor) (5 Field)
+						-- (6 Variable) (7 Class) (8 Interface) (9 Module) (10 Property)
+						-- (11 Unit) (12 Value) (13 Enum) (14 Keyword) (15 Snippet)
+						-- (16 Color) (17 File) (18 Reference) (19 Folder) (20 EnumMember)
+						-- (21 Constant) (22 Struct) (23 Event) (24 Operator) (25 TypeParameter)
+						function(entry1, entry2)
+							-- only show fields
+							local kind1 = entry1:get_kind()
+							local kind2 = entry2:get_kind()
+							if kind1 == 1 then -- Text goes to bottom
+								return false
+							end
+							if kind1 == 5 and kind2 ~= 5 then -- Fields high up
+								return true
+							elseif kind1 ~= 5 and kind2 == 5 then
+								return false
+							end
+							return nil
+						end
+					}
+				}
 			})
 
 			vim.diagnostic.config({
