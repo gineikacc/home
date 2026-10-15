@@ -96,6 +96,7 @@ PATH="/home/blud/.config/herd-lite/bin:$PATH"
 PATH="/home/blud/code/scripts/:$PATH"
 PATH="$PATH:/home/blud/.dotnet/tools"
 PATH="$PATH:/home/blud/opt/eclipse"
+PATH="$PATH:/home/blud/.local/share/gem/ruby/3.4.0/bin"
 export PHP_INI_SCAN_DIR="/home/blud/.config/herd-lite/bin:$PHP_INI_SCAN_DIR"
 
 # Expo cli be buggin fr
