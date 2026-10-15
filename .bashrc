@@ -118,6 +118,7 @@ export -f mkcd
 
 # Ytdl tech
 alias ytdl='yt-dlp -f "bestvideo[height<=1080]+bestaudio/best[height<=1080]" -o "$HOME/yt/%(uploader)s/%(title)s.%(ext)s" --embed-metadata --embed-thumbnail --embed-subs --sub-langs "en" --fragment-retries 10 --merge-output-format mp4'
+alias brokieahahahha='opencode run --model opencode/mimo-v2.6-flash-free "Reply OK" 2>&1 | grep -Ei "OK|rate.?limit|429|error" | tail -1'
 
 # Colored yay
 export YAY_USE_COLORS=1
