@@ -1,7 +1,7 @@
 return {
 	{
 		"HiPhish/rainbow-delimiters.nvim",
-		enabled = true,
+		enabled = false,
 		config = function()
 			require('rainbow-delimiters.setup').setup {}
 			vim.api.nvim_set_hl(0, 'RainbowDelimiterCustomBlue', { default = true, fg = '#5555ff', ctermfg = 'Blue' })
