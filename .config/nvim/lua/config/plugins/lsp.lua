@@ -36,6 +36,18 @@ return {
 			for _, value in ipairs(defaultSetups) do
 				lspconfig[value].setup {}
 			end
+
+			lspconfig.elixirls.setup({
+				cmd = { vim.fn.stdpath("data") .. "/mason/packages/elixir-ls/language_server.sh" },
+
+				root_dir = lspconfig.util.root_pattern("mix.exs", ".git"),
+
+				filetypes = { "elixir", "eelixir", "heex", "surface" },
+			})
+			-- lspconfig.elixirls.setup {
+			-- 	cmd = { "/home/blud/.local/share/nvim/mason/bin/elixir-ls" },
+			-- }
+
 			lspconfig.clangd.setup {
 				cmd = { "clangd", "--fallback-style=LLVM" }, -- Ensures LLVM style (4 spaces)
 				on_attach = function(client, bufnr)
