@@ -80,6 +80,8 @@ alias gohome='xrandr --output HDMI-2 --off && xrandr --output eDP-1 --auto'
 alias goport='xrandr --output HDMI-2 --auto --mode 2560x1440 --right-of eDP-1'
 alias gopotty='xrandr --output HDMI-2 --auto --mode 1920x1080 --right-of eDP-1'
 alias gosmall='xrandr --output eDP-1 --auto --mode 960x540'
+alias cast='scrcpy --audio-codec=aac  --background-color=#000'
+
 alias btr='bluetoothctl power off && rfkill unblock bluetooth && bluetoothctl power on \
             && bluetoothctl connect 20:15:82:F1:60:22 && clear'
 alias btx='btr && exit'
