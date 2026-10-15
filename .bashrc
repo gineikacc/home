@@ -98,6 +98,7 @@ alias cm="setxkbmap us -variant colemak_dh"
 alias kkk="setxkbmap gincc"
 alias cx="setxkbmap chromaxx"
 alias ss="setxkbmap -option caps:swapescape"
+alias qa="cm; ss; rate;"
 raudio() {
     pkill -9 pipewire
     pkill -9 wireplumber
