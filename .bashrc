@@ -47,6 +47,7 @@ alias die="shutdown -h now"
 alias lg='lazygit'
 alias gs='git status'
 alias gitbog="git clean -f && git reset --hard"
+alias glog="git log --graph --color=always --date=relative --pretty=format:'%C(auto)%h %C(blue)%ad%C(reset)%x09%s' | column -ts $'\t' | tac"
 alias lss='lsd -lahSr'
 alias lt='lsd -lahtr'
 alias ll="pwd && lsd -lah"
