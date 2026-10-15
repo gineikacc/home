@@ -330,15 +330,18 @@ globalkeys = gears.table.join(
 	awful.key({ modkey }, "u", function()
 		awful.spawn("/home/blud/temp/memelock/memelock --stocks --stock=^GSPC,INTC,NVDA,TSLA ")
 	end, { description = "lock screen", group = "awesome" }),
-	awful.key({ modkey, "Shift" }, "s", function()
-		awful.spawn.with_shell("flameshot full -p ~/scr/")
-	end, { description = "screenshot", group = "awesome" }),
 	awful.key({ modkey }, "s", function()
-		awful.spawn.with_shell("flameshot gui -p ~/scr/")
+		awful.spawn.with_shell("scrot -s -f ~/scr/screenshot-%Y%m%d-%H%M%S.png")
+		-- awful.spawn.with_shell("flameshot gui -p ~/scr/")
 	end, { description = "screenshot", group = "awesome" }),
+	awful.key({ modkey, "Shift" }, "s", function()
+		awful.spawn.with_shell("scrot -f ~/scr/screenshot-%Y%m%d-%H%M%S.png")
+		-- awful.spawn.with_shell("flameshot full -p ~/scr/")
+	end, { description = "screenshot (fullscreen)", group = "awesome" }),
 	awful.key({ modkey, "Control" }, "s", function()
-		awful.spawn.with_shell("flameshot gui -c")
-	end, { description = "screenshot", group = "awesome" }),
+		awful.spawn.with_shell("scrot -s -f - | xclip -selection clipboard -target image/png")
+		-- awful.spawn.with_shell("flameshot gui -c")
+	end, { description = "screenshot (clipboard)", group = "awesome" }),
 	awful.key({ modkey, "Shift", "Control" }, "s",
 		function()
 			hotkeys_popup.show_help(nil, awful.screen.focused())
