@@ -527,7 +527,11 @@ awful.rules.rules = {
 	},
 	{
 		rule = { class = "Alt1" },
-		properties = { floating = true, focus = true },
+		properties = {
+			floating = true,
+			focus = true,
+			ontop = true
+		},
 	},
 
 	-- Floating clients.
