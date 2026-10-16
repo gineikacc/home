@@ -12,6 +12,11 @@ M.state = {
 	currentCode = "en",
 	targetName = "French",
 	targetCode = "fr",
+	-- Per-line language tags (toggled by <leader>lg). When on, <leader>t /
+	-- <leader>T prefix every translated line with "<code>: ", and <M-d>,
+	-- <leader>li and <leader>lp read that tag off the line to override the
+	-- target language for that one lookup / annotation / utterance.
+	language_tags = false,
 }
 
 -- At most this many `trans` processes in flight at once.
@@ -189,6 +194,47 @@ do
 	end
 end
 
+-- Language codes we can recognise in a per-line tag, and their display names.
+local code_set, code_name = {}, {}
+for name, code in pairs(langs) do
+	code_set[code] = true
+	if not code_name[code] then
+		code_name[code] = name
+	end
+end
+
+-- How a per-line language tag is written: "[fr]: bonjour". The code is
+-- bracketed so ordinary prose that opens with a colon ("Note: ...", "no: ...")
+-- is never mistaken for a tag; parsing accepts any spacing after "]:".
+M.tag_separator = ": "
+local function tag_prefix(code)
+	return "[" .. code .. "]" .. M.tag_separator
+end
+
+-- Split a leading per-line language tag off some text: ("fr", "bonjour") for
+-- "[fr]: bonjour". Returns (nil, text) when per-line tags are off, or when the
+-- bracketed prefix is not a known language code. The prefix is dropped from the
+-- returned text.
+local function split_tag(text)
+	if not M.state.language_tags then
+		return nil, text
+	end
+	local code, rest = text:match("^%[([%w%-]+)%]:%s*(.*)$")
+	if code and code_set[code] then
+		return code, rest
+	end
+	return nil, text
+end
+
+-- The per-line language tag on buffer row (1-based), or nil.
+local function line_language(row)
+	local line = vim.api.nvim_buf_get_lines(0, row - 1, row, false)[1]
+	if not line then
+		return nil
+	end
+	return (split_tag(line))
+end
+
 -- Run worker(index, done) for every index in 1..count, keeping at most
 -- max_concurrency of them in flight; the rest are queued. done() may fire in
 -- any order. on_done() runs exactly once, after every worker called done().
@@ -245,13 +291,13 @@ local function escape_visual()
 	)
 end
 
--- Exact text of the current visual selection: charwise yields only the
--- selected span (partial first/last lines included), linewise yields the
--- whole lines, blockwise yields the column slice of each line. Must be
--- called BEFORE escape_visual(): mode() and getpos("v") are only
--- meaningful while visual mode is still active. Forward and backward
+-- The visual selection as one entry per line, top-down, each carrying its
+-- 0-based buffer row: charwise yields only the selected span (partial first/
+-- last lines included), linewise the whole lines, blockwise the column slice
+-- of each line. Must be called BEFORE escape_visual(): mode() and getpos("v")
+-- are only meaningful while visual mode is still active. Forward and backward
 -- selections (anchor after cursor) are handled by ordering the two ends.
-local function visual_text()
+local function visual_segments()
 	local sel_mode = vim.fn.mode()
 	local s, e = vim.fn.getpos("v"), vim.fn.getpos(".")
 	if s[2] > e[2] or (s[2] == e[2] and s[3] > e[3]) then
@@ -266,38 +312,43 @@ local function visual_text()
 		return math.min(math.max(col, 1), len + 1)
 	end
 
+	local segs = {}
 	if sel_mode == "V" then -- linewise: the whole lines
-		return table.concat(
-			vim.api.nvim_buf_get_lines(0, s[2] - 1, e[2], false), " ")
+		for row = s[2], e[2] do
+			segs[#segs + 1] = { row0 = row - 1, text = line_at(row) }
+		end
+		return segs
 	end
 
 	if sel_mode == "\22" then -- blockwise: one column slice per line
 		local c1 = math.min(s[3], e[3])
 		local c2 = math.max(s[3], e[3])
-		local parts = {}
 		for row = s[2], e[2] do
 			local line = line_at(row)
 			-- a slice that starts past this line's end contributes nothing
 			if c1 <= #line then
-				parts[#parts + 1] = line:sub(c1, math.min(c2, #line))
+				segs[#segs + 1] = { row0 = row - 1, text = line:sub(c1, math.min(c2, #line)) }
 			end
 		end
-		return table.concat(parts, " ")
+		return segs
 	end
 
 	-- charwise: anchor..cursor, both endpoints inclusive
-	if s[2] == e[2] then
-		local line = line_at(s[2])
-		return line:sub(clamp(s[3], #line), clamp(e[3], #line))
+	for row = s[2], e[2] do
+		local line = line_at(row)
+		local c1 = (row == s[2]) and clamp(s[3], #line) or 1
+		local c2 = (row == e[2]) and clamp(e[3], #line) or (#line + 1)
+		segs[#segs + 1] = { row0 = row - 1, text = line:sub(c1, c2) }
 	end
+	return segs
+end
+
+-- Exact text of the current visual selection (see visual_segments above).
+local function visual_text()
 	local parts = {}
-	local first_line = line_at(s[2])
-	parts[#parts + 1] = first_line:sub(clamp(s[3], #first_line))
-	for row = s[2] + 1, e[2] - 1 do
-		parts[#parts + 1] = line_at(row)
+	for _, seg in ipairs(visual_segments()) do
+		parts[#parts + 1] = seg.text
 	end
-	local last_line = line_at(e[2])
-	parts[#parts + 1] = last_line:sub(1, clamp(e[3], #last_line))
 	return table.concat(parts, " ")
 end
 
@@ -322,6 +373,10 @@ function M.translate(from_code, to_code)
 	if #lines == 0 then
 		return
 	end
+	-- Per-line tags: strip a source line's own tag before translating, and
+	-- stamp each result with the language it came back in (to_code).
+	-- Snapshotted so a mid-run <leader>lg toggle can't split one run's output.
+	local tag = M.state.language_tags and tag_prefix(to_code) or ""
 
 	local ns = vim.api.nvim_create_namespace("translation")
 	-- right gravity on both anchors: nvim_buf_set_lines replaces a text range
@@ -357,13 +412,14 @@ function M.translate(from_code, to_code)
 			done()
 		end
 
-		if lines[i]:match("^%s*$") then
+		local _, src = split_tag(lines[i])
+		if src:match("^%s*$") then
 			results[i] = lines[i]
 			finish()
 			return
 		end
 		vim.system(
-			{ "trans", "-b", from_code .. ":" .. to_code, "--", lines[i] },
+			{ "trans", "-b", from_code .. ":" .. to_code, "--", src },
 			{ text = true },
 			function(obj)
 				local out = (obj.stdout or ""):gsub("\r?\n+", " "):gsub("%s+$", "")
@@ -371,7 +427,7 @@ function M.translate(from_code, to_code)
 					results[i] = lines[i] -- failed or empty: keep the original
 					failures = failures + 1
 				else
-					results[i] = out
+					results[i] = tag .. out
 				end
 				finish()
 			end
@@ -478,61 +534,98 @@ function M.inline_ipa()
 	local first, last = visual_rows()
 	escape_visual()
 
-	local code = phonemize_code_for(M.state.targetCode)
-	if not code then
-		echo_warn(("Phonemization for %s (%s) is not supported"):format(
-			M.state.targetName, M.state.targetCode
-		))
-		return
-	end
-
 	local lines = vim.api.nvim_buf_get_lines(buf, first, last, false)
 	if #lines == 0 then
 		return
 	end
 
-	local cmd = { "phonemize", "-l", code, "--preserve-punctuation",
-		"--preserve-empty-lines", "--language-switch", "remove-flags" }
-	if M.ipa_with_stress then
-		table.insert(cmd, "--with-stress")
+	-- A line's language comes from its "code: " tag (when per-line tags are
+	-- on), else from the target language. Consecutive lines that want the same
+	-- voice are phonemized in one call; the tag itself is not phonemized.
+	local runs, unsupported = {}, {}
+	for i, line in ipairs(lines) do
+		local tag, text = split_tag(line)
+		local code = phonemize_code_for(tag or M.state.targetCode)
+		if not code then
+			unsupported[tag or M.state.targetCode] = true
+		else
+			local run = runs[#runs]
+			if not (run and run.code == code) then
+				run = { code = code, text = {}, rows = {} }
+				runs[#runs + 1] = run
+			end
+			run.text[#run.text + 1] = text
+			run.rows[#run.rows + 1] = first + i - 1
+		end
+	end
+	if #unsupported > 0 then
+		local list = vim.tbl_keys(unsupported)
+		table.sort(list)
+		echo_warn(("Phonemization not supported for: %s"):format(table.concat(list, ", ")))
+	end
+	if #runs == 0 then
+		return
 	end
 
-	-- One phonemize call for the whole region: it preserves line structure
-	-- (incl. empty lines with --preserve-empty-lines), so output line i
-	-- maps to buffer line first+i-1.
-	vim.system(cmd, { text = true, stdin = table.concat(lines, "\n") }, function(obj)
+	local results = {} -- 0-based row -> phoneme string
+	local any_ok = false
+	local pending = #runs
+	local function write()
+		pending = pending - 1
+		if pending > 0 then
+			return
+		end
 		-- vim.system callbacks run in a fast event context
 		vim.schedule(function()
-			if not vim.api.nvim_buf_is_valid(buf) then
-				return
-			end
-			if obj.code ~= 0 then
-				echo_warn("Phonemization failed: "
-					.. ((obj.stderr or ""):gsub("%s+$", ""):gsub("\n", " ")))
-				return
-			end
-			local phonemes = vim.split((obj.stdout or ""):gsub("\r?\n$", ""), "\n",
-				{ plain = true })
-			if #phonemes ~= #lines then
-				echo_warn(("Phonemize line count mismatch (%d vs %d), annotations skipped")
-					:format(#phonemes, #lines))
+			if not vim.api.nvim_buf_is_valid(buf) or not any_ok then
 				return
 			end
 			vim.api.nvim_buf_clear_namespace(buf, ipa_ns, first, last)
-			for i, ph in ipairs(phonemes) do
-				ph = ph:gsub("%s+$", "")
+			for row, ph in pairs(results) do
 				if ph ~= "" then
 					-- "; /ipa/" is the rendering that survives a tmux copy
 					-- into a note file: "/…/" at eol matches the IPA syntax
 					-- in after/syntax/french.vim and ";" is its Separator.
-					vim.api.nvim_buf_set_extmark(buf, ipa_ns, first + i - 1, 0, {
+					vim.api.nvim_buf_set_extmark(buf, ipa_ns, row, 0, {
 						virt_text = { { "; /" .. ph .. "/", "Comment" } },
 						virt_text_pos = "eol",
 					})
 				end
 			end
 		end)
-	end)
+	end
+	for _, run in ipairs(runs) do
+		-- phonemize preserves line structure (incl. empty lines with
+		-- --preserve-empty-lines), so output line j maps to run.rows[j]
+		local cmd = { "phonemize", "-l", run.code, "--preserve-punctuation",
+			"--preserve-empty-lines", "--language-switch", "remove-flags" }
+		if M.ipa_with_stress then
+			table.insert(cmd, "--with-stress")
+		end
+		vim.system(cmd, { text = true, stdin = table.concat(run.text, "\n") },
+			function(obj)
+				vim.schedule(function()
+					if obj.code ~= 0 then
+						echo_warn("Phonemization failed: "
+							.. ((obj.stderr or ""):gsub("%s+$", ""):gsub("\n", " ")))
+					else
+						local phonemes = vim.split(
+							(obj.stdout or ""):gsub("\r?\n$", ""), "\n", { plain = true })
+						if #phonemes ~= #run.rows then
+							echo_warn(
+								("Phonemize line count mismatch (%d vs %d), annotations skipped")
+								:format(#phonemes, #run.rows))
+						else
+							for j, ph in ipairs(phonemes) do
+								results[run.rows[j]] = (ph:gsub("%s+$", ""))
+							end
+							any_ok = true
+						end
+					end
+					write()
+				end)
+			end)
+	end
 end
 
 -- Materialize the inline-IPA virtual text into real buffer text: each line
@@ -593,7 +686,8 @@ end
 
 -- Dictionary popup for the word under the cursor: translate-shell's
 -- dictionary mode (definitions, examples, synonyms) in a floating window.
--- Reads the word in the *target* language (same direction as <leader>ls).
+-- Reads the word in the *target* language (or in the language named by the
+-- line's per-line tag, if tags are on; same direction as <leader>ls).
 -- The popup buffer is modifiable (trim it, add your own notes) and wide
 -- (content-driven width, 60..90% of the screen).
 local dict_win -- current popup, if any
@@ -664,7 +758,7 @@ local function dict_rule(...)
 	return string.rep("-", w)
 end
 
-local function dict_show(lines, word)
+local function dict_show(lines, word, target_name)
 	dict_close()
 	local buf = vim.api.nvim_create_buf(false, true)
 	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
@@ -689,8 +783,8 @@ local function dict_show(lines, word)
 		row = math.floor((vim.o.lines - height) / 2) - 1,
 		col = math.floor((vim.o.columns - width) / 2),
 		border = "rounded",
-		title = (" %s (%s → %s) "):format(word, M.state.targetName,
-			M.state.currentName),
+		title = (" %s (%s → %s) "):format(word,
+			target_name or M.state.targetName, M.state.currentName),
 		title_pos = "center",
 	})
 	vim.wo[dict_win].wrap = true
@@ -711,18 +805,25 @@ function M.dictionary()
 	-- languages without word spaces and for multi-word phrases, where <cword>
 	-- would only capture one token
 	local visual = vim.fn.mode():find("[vV\22]")
-	local word
+	local word, row
 	if visual then
+		row = select(1, visual_rows()) + 1
 		word = vim.trim(visual_text())
 		escape_visual()
 	else
 		word = vim.fn.expand("<cword>")
+		row = vim.fn.line(".")
 	end
+	-- drop a leading per-line language tag from the looked-up text
+	word = select(2, split_tag(word))
 	if word == "" then
 		echo_warn(visual and "No text selected" or "No word under cursor")
 		return
 	end
-	local pair = M.state.targetCode .. ":" .. M.state.currentCode
+	-- the tag on this line (when per-line tags are on) is the language to look
+	-- the word up in; otherwise fall back to the configured target language
+	local target = line_language(row) or M.state.targetCode
+	local pair = target .. ":" .. M.state.currentCode
 
 	-- translate-shell's -d prints the *original* (target-language) dictionary
 	-- by default; -show-original-dictionary/-show-dictionary pick which side(s).
@@ -775,7 +876,7 @@ function M.dictionary()
 		else
 			lines = cur_ok and cur or tgt
 		end
-		dict_show(lines, word)
+		dict_show(lines, word, code_name[target])
 	end
 
 	local function run(key, original, translation)
@@ -796,16 +897,62 @@ function M.dictionary()
 end
 
 -- TTS playback via Google TTS (trans -speak + mpv). Speaks the selection
--- (visual) or the current line (normal) in the target language — the text
--- itself is NEVER translated (-no-translate), it is only read aloud with
--- the target language's voice. Nothing is written to the buffer.
+-- (visual) or the current line (normal), one request per line so each line is
+-- read in its own language — the language named by the line's per-line tag, if
+-- tags are on, else the target language. The text itself is NEVER translated
+-- (-no-translate), it is only read aloud. Nothing is written to the buffer.
 --
 -- Google's TTS endpoint rejects requests over 200 chars (verified: 200 →
--- HTTP 200, 201 → HTTP 400), so long selections are split into chunks at
--- sentence/space boundaries and played sequentially; a new keypress
--- cancels the running chain.
+-- HTTP 200, 201 → HTTP 400), so lines longer than that are split into chunks
+-- at sentence/space boundaries. Every chunk's audio is fetched up front, in
+-- parallel, into temp files and then handed as a playlist to a single mpv
+-- instance: fetching ahead hides the download latency behind the playback, and
+-- one long-lived player means no per-line startup pause. Any new <leader>lp
+-- press — even one with nothing to read — stops the previous run first, and
+-- :TTSStop / `pkill -f nvim-tts` stop it too; every step is tagged (M.tts_tag)
+-- so it can be found and killed from outside Neovim.
 local speaking_gen = 0 -- bump to cancel an in-flight chain
-local speaking_proc
+local speaking_procs = {} -- "trans" downloaders still in flight
+local speaking_player -- the single mpv playing the prefetched queue
+local speaking_files = {} -- temp mp3s to remove when playback ends/cancels
+
+-- Every process TTS starts carries this string in its command line — mpv via
+-- --title, the "trans" downloaders via their temp path — so a playback started
+-- by mistake can be killed from any shell, without going through Neovim:
+--   pgrep -af nvim-tts   -- what is playing right now
+--   pkill -f  nvim-tts   -- stop it
+M.tts_tag = "nvim-tts"
+
+-- Stop whatever the previous <leader>lp started: kill the in-flight downloads
+-- and the player, then remove the audio they produced. Returns true if a
+-- process was actually killed.
+local function stop_speaking()
+	local stopped = false
+	for _, p in ipairs(speaking_procs) do
+		pcall(p.kill, p, "sigterm")
+		stopped = true
+	end
+	speaking_procs = {}
+	if speaking_player then
+		pcall(speaking_player.kill, speaking_player, "sigterm")
+		speaking_player = nil
+		stopped = true
+	end
+	for _, f in ipairs(speaking_files) do
+		vim.uv.fs_unlink(f)
+	end
+	speaking_files = {}
+	return stopped
+end
+
+-- Explicit stop, exposed as :TTSStop (the same tag that lets a shell pkill it).
+-- Bumping the generation also neuters any prefetch/player callback in flight.
+function M.tts_stop()
+	speaking_gen = speaking_gen + 1
+	if stop_speaking() then
+		vim.notify("TTS stopped")
+	end
+end
 
 -- Split text into <=max byte chunks without cutting a UTF-8 char in half.
 local function tts_chunks(text, max)
@@ -847,49 +994,98 @@ local function tts_chunks(text, max)
 end
 
 local function speak_text()
-	local selected
+	-- one utterance per selected line, top-down, so each line is read in its
+	-- own language (its per-line tag, if any, else the target language)
+	local rows
 	if vim.fn.mode():find("[vV\22]") then
-		-- the exact selection: a charwise partial-line selection reads only
-		-- that subsection, linewise reads whole lines
-		selected = visual_text()
+		rows = visual_segments() -- exact selection: charwise slice / whole lines
 		escape_visual()
 	else
-		-- normal mode: the current line
-		selected = vim.api.nvim_get_current_line()
+		rows = { { row0 = vim.fn.line(".") - 1, text = vim.api.nvim_get_current_line() } }
 	end
-	if selected:match("^%s*$") then
+
+	-- resolve each line's voice, strip its tag from the spoken text, and drop
+	-- blank lines; long lines are still chunked to Google's 200-char limit
+	local queue = {}
+	for _, seg in ipairs(rows) do
+		local code = line_language(seg.row0 + 1) or M.state.targetCode
+		local text = select(2, split_tag(seg.text))
+		if text:match("%S") then
+			for _, chunk in ipairs(tts_chunks(text, 190)) do
+				queue[#queue + 1] = { code = code, chunk = chunk }
+			end
+		end
+	end
+	-- A press always stops whatever the previous one started — even a bare
+	-- press with nothing to read — then restarts only if there is something.
+	stop_speaking()
+	speaking_gen = speaking_gen + 1
+	local gen = speaking_gen
+	if #queue == 0 then
 		return
 	end
 
-	-- cancel any playback still running from a previous press
-	speaking_gen = speaking_gen + 1
-	if speaking_proc then
-		pcall(speaking_proc.kill, speaking_proc, "sigterm")
-		speaking_proc = nil
-	end
-
-	-- "<code>:" pins Google's TTS voice (tl=) to the target language even
-	-- if the selection is written in another language; -speak/-no-translate
-	-- mean the text goes to the TTS endpoint untouched.
-	local chunks = tts_chunks(selected, 190)
-	local gen, i = speaking_gen, 1
-	local function play_next()
-		if gen ~= speaking_gen or i > #chunks then
+	-- Prefetch the whole queue, in parallel (bounded by max_concurrency), as
+	-- temp mp3s: -download-audio-as fetches the audio to a file without
+	-- playing it. -no-play matters — without it trans, having no -player, falls
+	-- back to a local speech synthesizer (~4s per line of pure waste).
+	-- "<code>:" pins Google's TTS voice (tl=) to the line's language; -speak /
+	-- -no-translate send the text untouched.
+	local files = {}
+	speaking_files = files
+	pool_run(#queue, function(i, done)
+		if gen ~= speaking_gen then
+			done()
 			return
 		end
-		local chunk = chunks[i]
-		i = i + 1
-		speaking_proc = vim.system({ "trans", "-speak", "-no-translate",
-			"-player", "mpv", M.state.targetCode .. ":", "--", chunk },
+		local file = vim.fn.tempname() .. "-" .. M.tts_tag .. ".mp3"
+		files[i] = file
+		local proc = vim.system({ "trans", "-speak", "-no-translate", "-no-play",
+			"-download-audio-as", file, queue[i].code .. ":", "--", queue[i].chunk },
 			{ text = true }, function()
 				-- vim.system callbacks run in a fast event context
-				vim.schedule(play_next)
+				vim.schedule(done)
 			end)
-	end
-	play_next()
+		speaking_procs[#speaking_procs + 1] = proc
+	end, function()
+		if gen ~= speaking_gen then
+			return
+		end
+		speaking_procs = {}
+		-- Play the downloaded files in order with ONE mpv process: a playlist
+		-- avoids restarting the player per line, and --prefetch-playlist opens
+		-- the next file while the current one plays, so lines run together.
+		local paths = {}
+		for i = 1, #queue do
+			local st = files[i] and vim.uv.fs_stat(files[i])
+			if st and st.size > 0 then
+				paths[#paths + 1] = files[i]
+			end
+		end
+		if #paths == 0 then
+			stop_speaking()
+			return
+		end
+		local cmd = { "mpv", "--no-video", "--really-quiet",
+			"--prefetch-playlist=yes", "--title=" .. M.tts_tag }
+		vim.list_extend(cmd, paths)
+		speaking_player = vim.system(cmd, {}, function()
+			-- vim.system callbacks run in a fast event context
+			vim.schedule(function()
+				if gen == speaking_gen then
+					stop_speaking()
+				end
+			end)
+		end)
+	end)
 end
 
 function M.setup()
+	-- Stop a runaway TTS playback from the command line (the same thing a
+	-- fresh <leader>lp press does; see also `pkill -f <M.tts_tag>`).
+	vim.api.nvim_create_user_command("TTSStop", M.tts_stop,
+		{ desc = "Stop any TTS playback started by <leader>lp", force = true })
+
 	vim.keymap.set("n", "<leader>lt", function()
 		ts_pick("Select target language: ", languageNames, function(lang)
 			print("You selected:", lang)
@@ -915,7 +1111,18 @@ function M.setup()
 	vim.keymap.set("v", "<leader>T", "<Plug>(translate-reverse)", { remap = true })
 
 	vim.keymap.set({ "n", "v" }, "<leader>lq", function()
-		print("Translation: " .. M.state.currentName .. " --> " .. M.state.targetName)
+		print(("Translation: %s --> %s%s"):format(
+			M.state.currentName, M.state.targetName,
+			M.state.language_tags and "  [per-line language tags: ON]" or ""))
+	end)
+
+	-- Toggle per-line language tags: <leader>t/<leader>T then prefix every
+	-- translated line with "<code>: ", and <M-d>/<leader>li/<leader>lp read
+	-- that tag off the line as its language (see M.state.language_tags above).
+	vim.keymap.set("n", "<leader>lg", function()
+		M.state.language_tags = not M.state.language_tags
+		progress_echo({ { ("Per-line language tags: %s"):format(
+			M.state.language_tags and "ON" or "OFF"), "Comment" } })
 	end)
 
 	-- ":!kakasi -Ja -Ka -Ha -i utf8" ..
