@@ -311,3 +311,10 @@ vim.api.nvim_create_autocmd('LspAttach', {
 
 -- Language / translation toolkit (async, parallel; see lua/config/translation.lua)
 require("config.translation").setup()
+
+-- Personal procedures (see lua/procedures.lua). Each function in that file is
+-- exposed as a global so it can be run from the command line, e.g.
+-- `:lua weave(1)`, without a module prefix.
+for name, fn in pairs(require("procedures")) do
+	_G[name] = fn
+end
