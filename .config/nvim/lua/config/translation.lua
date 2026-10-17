@@ -211,6 +211,18 @@ local function tag_prefix(code)
 	return "[" .. code .. "]" .. M.tag_separator
 end
 
+-- Picker rows for <leader>lt / <leader>lT: the language code as a leading
+-- "[xx]\t" prefix so you can see which code goes with which language (e.g.
+-- "[fr]\tFrench"). Display only -- the value stays the bare name, so selection
+-- and M.state are unchanged.
+local languageChoices = {}
+for _, name in ipairs(languageNames) do
+	table.insert(languageChoices, {
+		value = name,
+		display = ("[%s]\t%s"):format(langs[name], name),
+	})
+end
+
 -- Split a leading per-line language tag off some text: ("fr", "bonjour") for
 -- "[fr]: bonjour". Returns (nil, text) when per-line tags are off, or when the
 -- bracketed prefix is not a known language code. The prefix is dropped from the
@@ -482,7 +494,18 @@ local function ts_pick(title, list, clojure)
 	pickers.new({}, {
 		prompt_title = title,
 		finder = finders.new_table {
-			results = list
+			results = list,
+			entry_maker = function(entry)
+				-- Entries are either a plain string (value == display) or a
+				-- { value = ..., display = ... } pair such as languageChoices.
+				local value, display
+				if type(entry) == "table" then
+					value, display = entry.value, entry.display
+				else
+					value, display = entry, entry
+				end
+				return { value, value = value, display = display, ordinal = display }
+			end,
 		},
 		sorter = conf.generic_sorter({}),
 		attach_mappings = function(prompt_bufnr, map)
@@ -1283,7 +1306,7 @@ function M.setup()
 	})
 
 	vim.keymap.set("n", "<leader>lt", function()
-		ts_pick("Select target language: ", languageNames, function(lang)
+		ts_pick("Select target language: ", languageChoices, function(lang)
 			print("You selected:", lang)
 			M.state.targetName = lang
 			M.state.targetCode = langs[lang]
@@ -1291,7 +1314,7 @@ function M.setup()
 	end)
 
 	vim.keymap.set("n", "<leader>lT", function()
-		ts_pick("Select current language: ", languageNames, function(lang)
+		ts_pick("Select current language: ", languageChoices, function(lang)
 			M.state.currentName = lang
 			M.state.currentCode = langs[lang]
 		end)
