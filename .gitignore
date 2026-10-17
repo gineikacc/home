@@ -37,6 +37,19 @@
 !/.config/gtk-4.0/
 !/.config/gtk-4.0/*
 
+# ~/.local/bin helpers used by the Neovim TTS module (tts_synth/tts_pool).
+# The parent dirs must be un-ignored first (git cannot re-include past an
+# excluded directory); /.local/* then keeps share/ (models, ~11 GB) and state/
+# ignored while exposing only these scripts.
+!/.local/
+/.local/*
+!/.local/bin/
+/.local/bin/*
+!/.local/bin/tts-serve
+!/.local/bin/piper-download-all
+!/.local/bin/kokoro-tts
+!/.local/bin/tts-build-voices
+
 
 
 #!/.config/

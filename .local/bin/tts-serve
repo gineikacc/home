@@ -1,0 +1,123 @@
+#!/home/blud/.venv/bin/python3
+"""Persistent TTS worker: load one voice once, then serve many synth requests.
+
+Used by lua/config/tts_pool.lua to keep hot voices resident, so playback no
+longer pays the ~3 s per-utterance model-load cost.
+
+Line protocol (one JSON object per line, UTF-8):
+
+    <-  {"event":"ready"}                       # model loaded; safe to send
+    ->  {"text":"...","out":"/path.wav","voice":"ff_siwis","settings":{...}}
+    <-  {"event":"done","out":"/path.wav"}      # file is complete
+    <-  {"event":"error","msg":"..."}           # request failed; server lives on
+
+`voice` in a request overrides --voice. Kokoro is started WITHOUT --voice and is
+told the voice per request, so one process serves every Kokoro voice (the model
+is shared). Piper requires --voice: its model file is the voice.
+
+A fatal load failure emits {"event":"error",...,"fatal":true} and exits 1.
+The process exits on stdin EOF, so it also dies when Neovim goes away.
+"""
+
+import argparse
+import json
+import os
+import sys
+import wave
+
+KOK = os.path.expanduser("~/.local/share/nvim/kokoro")
+
+
+def emit(obj):
+    sys.stdout.write(json.dumps(obj) + "\n")
+    sys.stdout.flush()
+
+
+def load_piper(voice, args):
+    from piper import PiperVoice
+    model = args.model or os.path.join(args.dir, voice + ".onnx")
+    return PiperVoice.load(model)
+
+
+def load_kokoro(_voice, args):
+    from kokoro_onnx import Kokoro
+    model = args.model or os.path.join(KOK, "kokoro-v1.0.onnx")
+    voices = args.voices or os.path.join(KOK, "voices-v1.0.bin")
+    return Kokoro(model, voices)
+
+
+def synth_piper(engine, voice, text, out, settings):
+    from piper import SynthesisConfig
+    cfg = SynthesisConfig(
+        length_scale=float(settings.get("length_scale", 1.0)),
+        volume=float(settings.get("volume", 1.0)),
+    )
+    with wave.open(out, "wb") as wav:
+        engine.synthesize_wav(text, wav, syn_config=cfg)
+
+
+def synth_kokoro(engine, voice, text, out, settings):
+    import numpy as np
+    samples, sr = engine.create(
+        text,
+        voice=voice,
+        speed=float(settings.get("speed", 1.0)),
+        lang=settings.get("lang") or "en-us",
+    )
+    pcm = (np.clip(samples, -1.0, 1.0) * 32767.0).astype("<i2")
+    with wave.open(out, "wb") as wav:
+        wav.setnchannels(1)
+        wav.setsampwidth(2)
+        wav.setframerate(sr)
+        wav.writeframes(pcm.tobytes())
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--provider", required=True, choices=["piper", "kokoro"])
+    ap.add_argument("--voice")
+    ap.add_argument("--dir", default=os.path.expanduser("~/.local/share/nvim/piper"))
+    ap.add_argument("--model")
+    ap.add_argument("--voices")
+    args = ap.parse_args()
+
+    if args.provider == "piper" and not args.voice:
+        emit({"event": "error", "msg": "--voice is required for piper", "fatal": True})
+        return 1
+
+    try:
+        if args.provider == "piper":
+            engine, synth = load_piper(args.voice, args), synth_piper
+        else:
+            engine, synth = load_kokoro(args.voice, args), synth_kokoro
+    except Exception as exc:  # noqa: BLE001 - report to the client and quit
+        emit({"event": "error", "msg": f"load failed: {exc}", "fatal": True})
+        return 1
+
+    emit({"event": "ready"})
+
+    for line in sys.stdin:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            req = json.loads(line)
+        except Exception as exc:  # noqa: BLE001
+            emit({"event": "error", "msg": f"bad request: {exc}"})
+            continue
+        try:
+            out = req["out"]
+            voice = req.get("voice") or args.voice
+            settings = req.get("settings")
+            if not isinstance(settings, dict):
+                settings = {}
+            synth(engine, voice, req.get("text", ""), out, settings)
+            emit({"event": "done", "out": out})
+        except Exception as exc:  # noqa: BLE001 - keep serving
+            emit({"event": "error", "msg": f"synth failed: {exc}"})
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

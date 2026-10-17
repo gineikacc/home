@@ -1,0 +1,243 @@
+#!/usr/bin/env python3
+"""Download and verify Piper voice models.
+
+A hardened replacement for ``python3 -m piper.download_voices``:
+
+* verifies every file against Piper's ``voices.json`` manifest
+  (size always, md5 when downloading);
+* retries transient failures and writes atomically (no half-files left behind);
+* URL-encodes paths, so voices with non-ASCII names (e.g. ``pt_PT-tugao``)
+  download correctly -- the stock tool raises UnicodeEncodeError on those;
+* concurrent, resumable, and self-checking: a re-run skips valid files
+  and re-fetches only what is missing or corrupt.
+
+Examples
+--------
+    piper-download-all                 # fetch/repair the full set
+    piper-download-all --verify        # only report problems, download nothing
+    piper-download-all --verify --md5  # full size+md5 audit of what is on disk
+    piper-download-all --lang fr       # only French voices
+    piper-download-all --tier medium   # only medium-quality voices
+    piper-download-all --only pt_PT-tugao-medium
+"""
+
+from __future__ import annotations
+
+import argparse
+import concurrent.futures
+import hashlib
+import json
+import os
+import sys
+import threading
+import time
+import urllib.parse
+import urllib.request
+
+BASE = "https://huggingface.co/rhasspy/piper-voices/resolve/main/"
+MANIFEST_URL = BASE + "voices.json?download=true"
+DEFAULT_DIR = os.path.expanduser("~/.local/share/nvim/piper")
+DEFAULT_CACHE = os.path.join(
+    os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache")),
+    "piper-voices-manifest.json",
+)
+UA = "piper-download-all/1.0"
+KEEP = (".onnx", ".onnx.json")
+
+_print_lock = threading.Lock()
+
+
+def log(msg: str) -> None:
+    with _print_lock:
+        print(msg, flush=True)
+
+
+def fetch_manifest(cache: str, refresh: bool) -> dict:
+    if os.path.exists(cache) and not refresh:
+        try:
+            with open(cache) as fh:
+                return json.load(fh)
+        except Exception:
+            pass  # fall through to network
+    last: Exception | None = None
+    for attempt in range(1, 4):
+        try:
+            req = urllib.request.Request(MANIFEST_URL, headers={"User-Agent": UA})
+            with urllib.request.urlopen(req, timeout=60) as resp:
+                data = json.load(resp)
+            os.makedirs(os.path.dirname(cache), exist_ok=True)
+            with open(cache + ".tmp", "w") as fh:
+                json.dump(data, fh)
+            os.replace(cache + ".tmp", cache)
+            return data
+        except Exception as exc:  # noqa: BLE001 - report and retry
+            last = exc
+            time.sleep(attempt * 2)
+    raise SystemExit(f"error: could not fetch manifest: {last}")
+
+
+def md5sum(path: str) -> str:
+    digest = hashlib.md5()
+    with open(path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def check(path: str, size: int, digest: str, deep: bool) -> tuple[bool, str]:
+    if not os.path.exists(path):
+        return False, "missing"
+    if os.path.getsize(path) != size:
+        return False, "truncated"
+    if deep and digest and md5sum(path) != digest:
+        return False, "md5"
+    return True, "ok"
+
+
+def download(url: str, dest: str, size: int, digest: str, retries: int) -> tuple[bool, str]:
+    makedirs(os.path.dirname(dest))
+    last = "?"
+    for attempt in range(1, retries + 1):
+        tmp = dest + ".part"
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": UA})
+            with urllib.request.urlopen(req, timeout=120) as resp, open(tmp, "wb") as out:
+                while True:
+                    chunk = resp.read(1 << 20)
+                    if not chunk:
+                        break
+                    out.write(chunk)
+            got = os.path.getsize(tmp)
+            if got != size:
+                raise OSError(f"size {got} != {size}")
+            if digest and md5sum(tmp) != digest:
+                raise OSError("md5 mismatch")
+            os.replace(tmp, dest)
+            return True, "ok"
+        except Exception as exc:  # noqa: BLE001 - retry
+            last = exc
+            try:
+                os.remove(tmp)
+            except OSError:
+                pass
+            if attempt < retries:
+                time.sleep(min(2**attempt, 15))
+    return False, str(last)
+
+
+def makedirs(path: str) -> None:
+    if path:
+        os.makedirs(path, exist_ok=True)
+
+
+def fold(text: str) -> str:
+    """Lower-case and strip accents so 'tugao' can match 'tugao'/'tugão'."""
+    import unicodedata
+
+    return "".join(
+        c for c in unicodedata.normalize("NFKD", text.lower())
+        if not unicodedata.combining(c)
+    )
+
+
+def build_tasks(manifest: dict, args) -> list[tuple]:
+    langs = {fold(s) for s in args.lang.split(",")} if args.lang else None
+    tiers = {fold(s) for s in args.tier.split(",")} if args.tier else None
+    only = {fold(s) for s in args.only.split(",")} if args.only else None
+    tasks = []
+    for code, entry in manifest.items():
+        if only is not None and fold(code) not in only:
+            continue
+        family = (entry.get("language") or {}).get("family", "")
+        lang_code = (entry.get("language") or {}).get("code", "")
+        if langs is not None and family.lower() not in langs and lang_code.lower() not in langs:
+            continue
+        if tiers is not None and entry.get("quality", "").lower() not in tiers:
+            continue
+        for repo_path, meta in entry.get("files", {}).items():
+            name = os.path.basename(repo_path)
+            if not name.endswith(KEEP):
+                continue
+            url = BASE + "/".join(urllib.parse.quote(seg, safe="") for seg in repo_path.split("/"))
+            tasks.append(
+                (code, name, url, os.path.join(args.dir, name),
+                 int(meta.get("size_bytes", 0)), meta.get("md5_digest") or "")
+            )
+    return tasks
+
+
+def human(n: int) -> str:
+    for unit in ("B", "KB", "MB", "GB"):
+        if n < 1024 or unit == "GB":
+            return f"{n:.1f} {unit}" if unit != "B" else f"{n} B"
+        n /= 1024
+    return f"{n:.1f} GB"
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--dir", default=DEFAULT_DIR, help=f"destination (default {DEFAULT_DIR})")
+    ap.add_argument("--manifest", default=DEFAULT_CACHE, help="manifest cache path")
+    ap.add_argument("--refresh", action="store_true", help="re-fetch the manifest")
+    ap.add_argument("--jobs", type=int, default=4, help="parallel downloads (default 4)")
+    ap.add_argument("--retries", type=int, default=3, help="attempts per file (default 3)")
+    ap.add_argument("--verify", action="store_true", help="report problems only; do not download")
+    ap.add_argument("--md5", action="store_true", help="also verify md5 of files already on disk")
+    ap.add_argument("--force", action="store_true", help="re-download even if a file looks valid")
+    ap.add_argument("--lang", help="comma-separated language families/codes, e.g. fr,en_US")
+    ap.add_argument("--tier", help="comma-separated qualities, e.g. medium,high")
+    ap.add_argument("--only", help="comma-separated voice codes, e.g. pt_PT-tugao-medium")
+    args = ap.parse_args()
+
+    manifest = fetch_manifest(os.path.expanduser(args.manifest), args.refresh)
+    tasks = build_tasks(manifest, args)
+    voices = sorted({t[0] for t in tasks})
+    log(f"{len(tasks)} files across {len(voices)} voices -> {args.dir}")
+
+    if args.verify:
+        bad = []
+        for code, name, _url, dest, size, digest in tasks:
+            good, why = check(dest, size, digest, args.md5)
+            if not good:
+                bad.append((name, why))
+                log(f"  BAD      {name}  ({why})")
+        log(f"verify: {len(tasks) - len(bad)}/{len(tasks)} valid"
+            + (f", {len(bad)} problem(s)" if bad else ""))
+        return 1 if bad else 0
+
+    lock = threading.Lock()
+    stats = {"skip": 0, "get": 0, "fail": 0, "bytes": 0}
+
+    def work(task):
+        code, name, url, dest, size, digest = task
+        if not args.force:
+            good, _ = check(dest, size, digest, deep=False)
+            if good:
+                with lock:
+                    stats["skip"] += 1
+                return
+        t0 = time.time()
+        ok, why = download(url, dest, size, digest, args.retries)
+        with lock:
+            if ok:
+                stats["get"] += 1
+                stats["bytes"] += size
+                log(f"  fetched  {name}  ({human(size)}, {time.time() - t0:.1f}s)")
+            else:
+                stats["fail"] += 1
+                log(f"  FAILED   {name}  ({why})")
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, args.jobs)) as pool:
+        list(pool.map(work, tasks))
+
+    log(f"done: {stats['get']} fetched ({human(stats['bytes'])}), "
+        f"{stats['skip']} already valid, {stats['fail']} failed")
+    return 1 if stats["fail"] else 0
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except KeyboardInterrupt:
+        sys.exit(130)

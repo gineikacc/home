@@ -1,0 +1,60 @@
+#!/home/blud/.venv/bin/python3
+"""Minimal Kokoro (ONNX) CLI: text -> WAV, shaped like piper/edge-tts.
+
+  kokoro-tts --voice ff_siwis --lang fr-fr --speed 1.0 --out out.wav -- "Bonjour"
+  echo "Bonjour" | kokoro-tts --out -        # WAV on stdout
+
+Text comes from the positional arg, else stdin. Needs kokoro-onnx plus the two
+model files (defaults under ~/.local/share/nvim/kokoro).
+"""
+import argparse
+import io
+import os
+import sys
+import wave
+
+import numpy as np
+from kokoro_onnx import Kokoro
+
+DATA = os.path.expanduser("~/.local/share/nvim/kokoro")
+DEF_MODEL = os.path.join(DATA, "kokoro-v1.0.onnx")
+DEF_VOICES = os.path.join(DATA, "voices-v1.0.bin")
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("text", nargs="?", help="text to speak; else read stdin")
+    ap.add_argument("-v", "--voice", default="ff_siwis")
+    ap.add_argument("-l", "--lang", default="fr-fr")
+    ap.add_argument("-s", "--speed", type=float, default=1.0)
+    ap.add_argument("-o", "--out", "--output", dest="output", default="-",
+                    help="WAV path or - for stdout")
+    ap.add_argument("-m", "--model", default=DEF_MODEL)
+    ap.add_argument("-V", "--voices", default=DEF_VOICES)
+    a = ap.parse_args()
+
+    text = a.text if a.text is not None else sys.stdin.read().strip()
+    if not text:
+        sys.exit("kokoro-tts: no text")
+
+    k = Kokoro(a.model, a.voices)
+    samples, sr = k.create(text, voice=a.voice, speed=a.speed, lang=a.lang)
+
+    pcm = (np.clip(samples, -1.0, 1.0) * 32767.0).astype("<i2")
+    buf = io.BytesIO()
+    with wave.open(buf, "wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(sr)
+        w.writeframes(pcm.tobytes())
+
+    data = buf.getvalue()
+    if a.output == "-":
+        sys.stdout.buffer.write(data)
+    else:
+        with open(a.output, "wb") as f:
+            f.write(data)
+
+
+if __name__ == "__main__":
+    main()

@@ -993,29 +993,19 @@ local function tts_chunks(text, max)
 	return chunks
 end
 
-local function speak_text()
-	-- one utterance per selected line, top-down, so each line is read in its
-	-- own language (its per-line tag, if any, else the target language)
-	local rows
-	if vim.fn.mode():find("[vV\22]") then
-		rows = visual_segments() -- exact selection: charwise slice / whole lines
-		escape_visual()
-	else
-		rows = { { row0 = vim.fn.line(".") - 1, text = vim.api.nvim_get_current_line() } }
-	end
+local tts_voices = require("config.tts_voices")
+local tts_synth = require("config.tts_synth")
+local tts_pool = require("config.tts_pool")
 
-	-- resolve each line's voice, strip its tag from the spoken text, and drop
-	-- blank lines; long lines are still chunked to Google's 200-char limit
-	local queue = {}
-	for _, seg in ipairs(rows) do
-		local code = line_language(seg.row0 + 1) or M.state.targetCode
-		local text = select(2, split_tag(seg.text))
-		if text:match("%S") then
-			for _, chunk in ipairs(tts_chunks(text, 190)) do
-				queue[#queue + 1] = { code = code, chunk = chunk }
-			end
-		end
-	end
+-- Play a queue of { { code=, chunk=, voice=voice|nil }, ... } top-down. Each
+-- item becomes a temp file — by the item's resolved catalog voice when there is
+-- one, else by the old Google path (trans -speak) as a fallback — and the files
+-- are handed to ONE mpv playlist, so nothing restarts per line. Piper/Kokoro
+-- voices are synthesized by the warm pool (tts_pool), so no model is reloaded;
+-- if a pooled request fails, the item is retried cold, one-shot. Synthesis runs
+-- in parallel (bounded by max_concurrency). stop_speaking()/speaking_gen remain
+-- the single mechanism that cancels any of it.
+local function play_queue(queue)
 	-- A press always stops whatever the previous one started — even a bare
 	-- press with nothing to read — then restarts only if there is something.
 	stop_speaking()
@@ -1025,34 +1015,81 @@ local function speak_text()
 		return
 	end
 
-	-- Prefetch the whole queue, in parallel (bounded by max_concurrency), as
-	-- temp mp3s: -download-audio-as fetches the audio to a file without
-	-- playing it. -no-play matters — without it trans, having no -player, falls
-	-- back to a local speech synthesizer (~4s per line of pure waste).
-	-- "<code>:" pins Google's TTS voice (tl=) to the line's language; -speak /
-	-- -no-translate send the text untouched.
 	local files = {}
 	speaking_files = files
+
+	-- Cold path: one process per item (model load included), or `trans` when
+	-- there is no catalog voice. Also the fallback when a warm worker fails.
+	local function one_shot(item, i, done)
+		local cmd, opts
+		if item.voice then
+			local ext = tts_synth.ext[item.voice.provider] or "mp3"
+			files[i] = files[i] or (vim.fn.tempname() .. "-" .. M.tts_tag .. "." .. ext)
+			cmd = tts_synth.cmd(item.voice, item.chunk, files[i])
+			opts = tts_synth.uses_stdin(item.voice) and { stdin = item.chunk } or {}
+		else
+			-- Google fallback. -download-audio-as fetches the audio without
+			-- playing it; -no-play matters (without it trans, having no
+			-- -player, spins up a ~4s/line local synthesizer). "<code>:" pins
+			-- Google's voice to the line's language, -no-translate keeps text
+			-- untouched.
+			files[i] = vim.fn.tempname() .. "-" .. M.tts_tag .. ".mp3"
+			cmd = { "trans", "-speak", "-no-translate", "-no-play",
+				"-download-audio-as", files[i], item.code .. ":", "--", item.chunk }
+			opts = {}
+		end
+		opts.text = true
+		local function run()
+			local proc = vim.system(cmd, opts, function()
+				-- vim.system callbacks run in a fast event context
+				vim.schedule(done)
+			end)
+			speaking_procs[#speaking_procs + 1] = proc
+		end
+		-- Piper models are large and fetched on demand: grab one the first
+		-- time the voice is used, then synthesize.
+		if item.voice and item.voice.provider == "piper"
+			and not tts_synth.piper_ready(item.voice) then
+			local p = vim.system(tts_synth.piper_fetch(item.voice), { text = true },
+				function()
+					vim.schedule(run)
+				end)
+			speaking_procs[#speaking_procs + 1] = p
+		else
+			run()
+		end
+	end
+
 	pool_run(#queue, function(i, done)
 		if gen ~= speaking_gen then
 			done()
 			return
 		end
-		local file = vim.fn.tempname() .. "-" .. M.tts_tag .. ".mp3"
-		files[i] = file
-		local proc = vim.system({ "trans", "-speak", "-no-translate", "-no-play",
-			"-download-audio-as", file, queue[i].code .. ":", "--", queue[i].chunk },
-			{ text = true }, function()
-				-- vim.system callbacks run in a fast event context
-				vim.schedule(done)
+		local item = queue[i]
+		if item.voice and tts_pool.supported(item.voice) then
+			local ext = tts_synth.ext[item.voice.provider] or "wav"
+			files[i] = vim.fn.tempname() .. "-" .. M.tts_tag .. "." .. ext
+			tts_pool.synth(item.voice, item.chunk, files[i], function(ok)
+				if gen ~= speaking_gen then
+					-- cancelled mid-synth: the worker may write the file
+					-- after stop_speaking() already unlinked it
+					vim.uv.fs_unlink(files[i])
+					done()
+				elseif ok then
+					done()
+				else
+					one_shot(item, i, done)
+				end
 			end)
-		speaking_procs[#speaking_procs + 1] = proc
+		else
+			one_shot(item, i, done)
+		end
 	end, function()
 		if gen ~= speaking_gen then
 			return
 		end
 		speaking_procs = {}
-		-- Play the downloaded files in order with ONE mpv process: a playlist
+		-- Play the produced files in order with ONE mpv process: a playlist
 		-- avoids restarting the player per line, and --prefetch-playlist opens
 		-- the next file while the current one plays, so lines run together.
 		local paths = {}
@@ -1080,11 +1117,170 @@ local function speak_text()
 	end)
 end
 
+-- Speak the selection (visual) or the current line (normal), one utterance per
+-- line so each line is read in its own language — the language named by the
+-- line's per-line tag, if any, else the target language. The text is never
+-- translated. Each line's voice is resolved from the catalog (<leader>lv);
+-- languages with no catalog voice fall back to Google (trans -speak).
+local function speak_text()
+	local rows
+	if vim.fn.mode():find("[vV\22]") then
+		rows = visual_segments() -- exact selection: charwise slice / whole lines
+		escape_visual()
+	else
+		rows = { { row0 = vim.fn.line(".") - 1, text = vim.api.nvim_get_current_line() } }
+	end
+
+	local queue = {}
+	for _, seg in ipairs(rows) do
+		local code = line_language(seg.row0 + 1) or M.state.targetCode
+		local text = select(2, split_tag(seg.text))
+		if text:match("%S") then
+			local voice = tts_voices.resolve(code)
+			for _, chunk in ipairs(tts_chunks(text, 190)) do
+				queue[#queue + 1] = { code = code, chunk = chunk, voice = voice }
+			end
+		end
+	end
+	play_queue(queue)
+end
+
+-- Text to preview a voice with: the visual selection or current line when it
+-- has any, else nil (the caller substitutes a canned sample). Must be read
+-- BEFORE a picker opens, while the source buffer — not the prompt — is current.
+local function preview_text()
+	if vim.fn.mode():find("[vV\22]") then
+		local segs = visual_segments()
+		escape_visual()
+		local t = segs[1] and select(2, split_tag(segs[1].text)) or ""
+		if t:match("%S") then
+			return t
+		end
+	else
+		local t = select(2, split_tag(vim.api.nvim_get_current_line()))
+		if t:match("%S") then
+			return t
+		end
+	end
+	return nil
+end
+
+-- <leader>lv: pick a voice for `code` from the catalog. <CR> sets a transient
+-- (session) override, <C-d> saves it as the language's persistent default, and
+-- <C-p> plays the highlighted voice on the current text (or a canned sample).
+local function tts_pick(code)
+	local base = tts_voices.base(code)
+	if not tts_voices.load() then
+		echo_warn("No voice catalog — run `tts-build-voices`")
+		return
+	end
+	local list = tts_voices.voices_for(base)
+	if #list == 0 then
+		echo_warn(("No TTS voices for %s"):format(tts_voices.language_name(base)))
+		return
+	end
+	local sample = preview_text() -- captured now, before Telescope takes the buffer
+	local cur, def = tts_voices.current_id(base), tts_voices.default_id(base)
+
+	local pickers = require("telescope.pickers")
+	local finders = require("telescope.finders")
+	local conf = require("telescope.config").values
+	local actions = require("telescope.actions")
+	local action_state = require("telescope.actions.state")
+
+	pickers.new({}, {
+		prompt_title = ("Voice · %s"):format(tts_voices.language_name(base)),
+		finder = finders.new_table {
+			results = list,
+			entry_maker = function(v)
+				local mark = (v.id == cur and "*") or (v.id == def and "+") or " "
+				local d = tts_voices.describe(v, mark)
+				local s = tts_synth.settings_label(v)
+				return {
+					value = v,
+					display = d.display .. (s ~= "" and ("  [" .. s .. "]") or ""),
+					ordinal = d.ordinal,
+				}
+			end,
+		},
+		sorter = conf.generic_sorter({}),
+		attach_mappings = function(prompt_bufnr, map)
+			actions.select_default:replace(function()
+				local entry = action_state.get_selected_entry()
+				actions.close(prompt_bufnr)
+				if entry then
+					tts_voices.set_override(base, entry.value.id)
+					vim.notify(("Voice (session): %s · %s"):format(
+						entry.value.name, entry.value.provider))
+				end
+			end)
+			map("i", "<C-d>", function()
+				local entry = action_state.get_selected_entry()
+				if entry then
+					tts_voices.set_default(base, entry.value.id)
+					vim.notify(("Default voice saved: %s · %s"):format(
+						entry.value.name, entry.value.provider))
+				end
+			end)
+			map("i", "<C-p>", function()
+				local entry = action_state.get_selected_entry()
+				if entry then
+					local text = sample or tts_voices.sample(base)
+					local chunk = tts_chunks(text, 190)[1] or text
+					play_queue({ { code = base, chunk = chunk, voice = entry.value } })
+				end
+			end)
+			return true
+		end,
+	}):find()
+end
+
 function M.setup()
+	-- Warm-pool tuning (see lua/config/tts_pool.lua): vim.g.tts_pool_enabled =
+	-- false turns it off; soft/hard caps and the idle TTL are adjustable.
+	if vim.g.tts_pool_enabled == false then
+		tts_pool.enabled = false
+	end
+	if vim.g.tts_max_warm then -- legacy alias for the soft cap
+		tts_pool.soft_cap = vim.g.tts_max_warm
+	end
+	if vim.g.tts_soft_cap then
+		tts_pool.soft_cap = vim.g.tts_soft_cap
+	end
+	if vim.g.tts_hard_cap then
+		tts_pool.hard_cap = vim.g.tts_hard_cap
+	end
+	if vim.g.tts_idle_ttl then
+		tts_pool.idle_ttl = vim.g.tts_idle_ttl
+	end
+
 	-- Stop a runaway TTS playback from the command line (the same thing a
 	-- fresh <leader>lp press does; see also `pkill -f <M.tts_tag>`).
 	vim.api.nvim_create_user_command("TTSStop", M.tts_stop,
 		{ desc = "Stop any TTS playback started by <leader>lp", force = true })
+
+	-- Inspect the warm TTS voice pool (what is resident right now).
+	vim.api.nvim_create_user_command("TTSPool", function()
+		local rows = tts_pool.info()
+		local lines = { ("TTS pool: %d/%d warm (hard %d, idle TTL %ds)%s"):format(
+			#rows, tts_pool.soft_cap, tts_pool.hard_cap,
+			math.floor(tts_pool.idle_ttl / 1000),
+			tts_pool.enabled and "" or "  (disabled)") }
+		for _, r in ipairs(rows) do
+			lines[#lines + 1] = ("  %-24s %-8s %-7s idle %ds%s"):format(
+				r.key, r.provider, r.ready and "ready" or "loading",
+				math.floor(r.idle_ms / 1000), r.busy and "  (busy)" or "")
+		end
+		vim.api.nvim_echo({ { table.concat(lines, "\n") } }, false, {})
+	end, { desc = "Show the warm TTS voice pool", force = true })
+
+	-- Warm workers are children of this Neovim; reap them on exit. They also
+	-- exit on their own when our stdin pipes close, so this only speeds it up.
+	vim.api.nvim_create_autocmd("VimLeavePre", {
+		callback = function()
+			tts_pool.stop_all()
+		end,
+	})
 
 	vim.keymap.set("n", "<leader>lt", function()
 		ts_pick("Select target language: ", languageNames, function(lang)
@@ -1187,8 +1383,17 @@ function M.setup()
 	-- visual selection (visual).
 	vim.keymap.set({ "n", "v" }, "<M-d>", M.dictionary, { silent = true })
 
-	-- Speak the selection / current line in the target language (Google TTS).
+	-- Speak the selection / current line in the target language, using the
+	-- voice picked with <leader>lv (Google TTS for languages with no catalog
+	-- voice).
 	vim.keymap.set({ "n", "v" }, "<leader>lp", speak_text, { silent = true })
+
+	-- Pick the TTS voice for the current line's language (its per-line tag, if
+	-- any, else the target language): <CR> uses it this session, <C-d> makes it
+	-- that language's saved default, <C-p> previews the highlighted voice.
+	vim.keymap.set({ "n", "v" }, "<leader>lv", function()
+		tts_pick(line_language(vim.fn.line(".")) or M.state.targetCode)
+	end, { silent = true })
 end
 
 return M
