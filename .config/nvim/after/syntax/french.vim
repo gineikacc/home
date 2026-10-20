@@ -9,8 +9,8 @@ syntax match Gender_f  ".*;f;.*" contains=Separator,IPA
 syntax match Gender_m2 ".*\<un\>.*" contains=Separator,IPA
 syntax match Gender_f2 ".*\<une\>.*" contains=Separator,IPA
 
-syntax match Gender_m3 "^\<le\>.*" contains=Separator,IPA
-syntax match Gender_f3 "^\<la\>.*" contains=Separator,IPA
+syntax match Gender_m3 ".*\<le\>.*" contains=Separator,IPA
+syntax match Gender_f3 ".*\<la\>.*" contains=Separator,IPA
 
 syntax match Gender_both   ".*;b;.*" contains=Separator,IPA
 syntax match Gender_plural ".*;p;.*" contains=Separator,IPA
