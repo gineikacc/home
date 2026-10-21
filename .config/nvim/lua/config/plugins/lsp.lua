@@ -103,6 +103,31 @@ return {
 			})
 			local cmp_select = { behavior = cmp.SelectBehavior.Select }
 
+			-- <C-n>/<C-p> normally select from cmp's menu; when the menu is
+			-- closed but the text before the cursor looks like a path, trigger
+			-- path completion instead (useful after pasting a path).
+			local function path_or_select(direction)
+				return function(fallback)
+					if cmp.visible() then
+						if direction == 'next' then
+							cmp.select_next_item(cmp_select)
+						else
+							cmp.select_prev_item(cmp_select)
+						end
+						return
+					end
+
+					local line = vim.api.nvim_get_current_line()
+					local col = vim.api.nvim_win_get_cursor(0)[2]
+					if line:sub(1, col):match('%S*/[^%s]*$') then
+						cmp.complete({ config = { sources = { { name = 'path' } } } })
+						return
+					end
+
+					fallback()
+				end
+			end
+
 			cmp.setup({
 				snippet = {
 					expand = function(args)
@@ -110,14 +135,15 @@ return {
 					end,
 				},
 				mapping = cmp.mapping.preset.insert({
-					['<C-p>'] = cmp.mapping.select_prev_item(cmp_select),
-					['<C-n>'] = cmp.mapping.select_next_item(cmp_select),
+					['<C-p>'] = path_or_select('prev'),
+					['<C-n>'] = path_or_select('next'),
 					['<C-y>'] = cmp.mapping.confirm({ select = true }),
 					["<C-Space>"] = cmp.mapping.complete(),
 				}),
 				sources = cmp.config.sources({
 					{ name = 'nvim_lsp' },
 					{ name = 'luasnip' }, -- For luasnip users.
+					{ name = 'path' },    -- Files and directories from the current path.
 				}, {
 					{ name = 'buffer' },
 				}),
