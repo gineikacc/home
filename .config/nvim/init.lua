@@ -35,7 +35,7 @@ local function toggleQF()
 		vim.cmd.copen()
 	end
 end
-vim.keymap.set("n", "<C-q>", toggleQF)
+vim.keymap.set("n", "<M-q>", toggleQF)
 vim.keymap.set("n", "<M-j>", "<cmd>cnext<CR>zz")
 vim.keymap.set("n", "<M-k>", "<cmd>cprev<CR>zz")
 
@@ -176,7 +176,7 @@ vim.keymap.set("n", "N", "Nzzzv")
 -- greatest remap ever
 vim.keymap.set("x", "p", [["_dP]])
 
-vim.keymap.set("n", "Q", ":tabnew<CR>:Oil<CR>")
+vim.keymap.set("n", "<C-q>", ":tabnew<CR>:Oil<CR>")
 vim.keymap.set("n", "<leader>a", "maggVG")
 
 -- GoLang tech
