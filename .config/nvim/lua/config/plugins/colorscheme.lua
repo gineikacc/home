@@ -15,7 +15,7 @@ return {
 			local highlights = {
 				Normal = { white, "#111111" },
 				NormalFloat = { white, black },
-				ColorColumn = { white, '#222222' },
+				ColorColumn = { 'none', '#222222' },
 				LineNr = { '#aaaaaa', '#333333' },
 				LineNrAbove = { '#888888', '#111111' },
 				LineNrBelow = { '#888888', '#111111' },
