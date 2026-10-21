@@ -1,5 +1,9 @@
 vim.g.mapleader = " "
 
+-- Enable true color before plugins load. Some plugins (e.g. nvim-colorizer)
+-- error out if this is not set when their setup runs.
+vim.opt.termguicolors = true
+
 require("config.lazy")
 
 
