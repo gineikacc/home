@@ -70,7 +70,7 @@ highlight Separator     guifg=#555555
 highlight! Answer_BAD   guifg=#dd3333
 highlight! Answer_WRN   guifg=#ffbb33
 
-highlight IPA       guifg=#bbbb44
+highlight IPA       guifg=#bbbb44 gui=NONE cterm=NONE
 highlight HR_left   guifg=#ee8888
 highlight HR_right  guifg=#8888ee
 highlight Eyesore   guifg=#ff0000 guibg=#6666ff

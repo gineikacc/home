@@ -549,6 +549,25 @@ end
 -- marks on those lines.
 local ipa_ns = vim.api.nvim_create_namespace("translation.ipa")
 
+-- Inline IPA inherits Comment's colors, but never its italic: italic IPA
+-- glyphs are ambiguous (e.g. italic "a" reads as "ɑ"), which is exactly the
+-- kind of confusion the annotation is supposed to remove. Recompute after a
+-- colorscheme change so the annotation keeps matching Comment.
+local function set_ipa_virtual_hl()
+	local hl = vim.api.nvim_get_hl(0, { name = "Comment", link = false })
+	hl.italic = false
+	if hl.cterm then
+		hl.cterm.italic = false
+	end
+	vim.api.nvim_set_hl(0, "IPAVirtual", hl)
+end
+
+set_ipa_virtual_hl()
+vim.api.nvim_create_autocmd("ColorScheme", {
+	group = vim.api.nvim_create_augroup("translation_ipa_hl", { clear = true }),
+	callback = set_ipa_virtual_hl,
+})
+
 -- Set to true to keep espeak's stress marks (useful for ru/pt, noisier for fr).
 M.ipa_with_stress = false
 
@@ -610,7 +629,7 @@ function M.inline_ipa()
 					-- into a note file: "/…/" at eol matches the IPA syntax
 					-- in after/syntax/french.vim and ";" is its Separator.
 					vim.api.nvim_buf_set_extmark(buf, ipa_ns, row, 0, {
-						virt_text = { { "; /" .. ph .. "/", "Comment" } },
+						virt_text = { { "; /" .. ph .. "/", "IPAVirtual" } },
 						virt_text_pos = "eol",
 					})
 				end
