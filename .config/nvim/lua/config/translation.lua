@@ -571,6 +571,10 @@ vim.api.nvim_create_autocmd("ColorScheme", {
 -- Set to true to keep espeak's stress marks (useful for ru/pt, noisier for fr).
 M.ipa_with_stress = false
 
+-- Padding between the longest annotated line and its IPA when a multi-line
+-- selection is annotated: every annotation starts in the same column.
+M.ipa_align_gap = 2
+
 function M.inline_ipa()
 	local buf = vim.api.nvim_get_current_buf()
 	local first, last = visual_rows()
@@ -610,6 +614,11 @@ function M.inline_ipa()
 	end
 
 	local results = {} -- 0-based row -> phoneme string
+	-- display width of each source line, for aligning annotations
+	local widths = {}
+	for i, line in ipairs(lines) do
+		widths[first + i - 1] = vim.fn.strdisplaywidth(line)
+	end
 	local any_ok = false
 	local pending = #runs
 	local function write()
@@ -623,13 +632,26 @@ function M.inline_ipa()
 				return
 			end
 			vim.api.nvim_buf_clear_namespace(buf, ipa_ns, first, last)
+			-- When several lines are annotated at once, pad each annotation
+			-- out to the longest line so the IPA forms a column. A single
+			-- line keeps the old "text; /ipa/" spacing.
+			local max_width, annotated = 0, 0
+			for row, ph in pairs(results) do
+				if ph ~= "" then
+					annotated = annotated + 1
+					max_width = math.max(max_width, widths[row] or 0)
+				end
+			end
+			local gap = annotated > 1 and M.ipa_align_gap or 0
 			for row, ph in pairs(results) do
 				if ph ~= "" then
 					-- "; /ipa/" is the rendering that survives a tmux copy
 					-- into a note file: "/…/" at eol matches the IPA syntax
 					-- in after/syntax/french.vim and ";" is its Separator.
+					local pad = string.rep(" ",
+						max_width - (widths[row] or 0) + gap)
 					vim.api.nvim_buf_set_extmark(buf, ipa_ns, row, 0, {
-						virt_text = { { "; /" .. ph .. "/", "IPAVirtual" } },
+						virt_text = { { pad .. "; /" .. ph .. "/", "IPAVirtual" } },
 						virt_text_pos = "eol",
 					})
 				end
