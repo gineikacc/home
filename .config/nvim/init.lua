@@ -52,6 +52,9 @@ vim.keymap.set("i", "<C-M-k>", "<C-[>mjO<C-[>`ja")
 
 vim.keymap.set("v", "<leader>j", ":join<CR>")
 
+-- Preserve cursor column dupe line
+vim.keymap.set("n", "Y", "<CMD>t.<CR>")
+
 
 -- Format on save
 local format_on_save = true;
