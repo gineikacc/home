@@ -40,10 +40,12 @@ end
 vim.keymap.set("n", "<M-q>", toggleQF)
 vim.keymap.set("n", "<M-j>", function()
 	pcall(vim.cmd.cnext)
+	vim.cmd("cc")
 	vim.cmd("normal! zz")
 end)
 vim.keymap.set("n", "<M-k>", function()
 	pcall(vim.cmd.cprev)
+	vim.cmd("cc")
 	vim.cmd("normal! zz")
 end)
 
