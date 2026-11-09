@@ -30,14 +30,13 @@ vim.g.netrw_winsize = -30
 
 
 -- Quickfix keymaps
-local qfActive = false
 local function toggleQF()
-	qfActive = not qfActive
-	if qfActive then
-		vim.cmd.cclose()
-	else
-		vim.cmd.copen()
+	for _, info in ipairs(vim.fn.getwininfo()) do
+		if info.quickfix == 1 then
+			vim.cmd.cclose()
+		end
 	end
+	vim.cmd.copen()
 end
 vim.keymap.set("n", "<M-q>", toggleQF)
 vim.keymap.set("n", "<M-j>", function()
