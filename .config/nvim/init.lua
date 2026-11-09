@@ -32,6 +32,7 @@ local function toggleQF()
 	for _, info in ipairs(vim.fn.getwininfo()) do
 		if info.quickfix == 1 then
 			vim.cmd.cclose()
+			return
 		end
 	end
 	vim.cmd.copen()
