@@ -40,8 +40,14 @@ local function toggleQF()
 	end
 end
 vim.keymap.set("n", "<M-q>", toggleQF)
-vim.keymap.set("n", "<M-j>", "<cmd>cnext<CR>zz")
-vim.keymap.set("n", "<M-k>", "<cmd>cprev<CR>zz")
+vim.keymap.set("n", "<M-j>", function()
+	pcall(vim.cmd.cnext)
+	vim.cmd("normal! zz")
+end)
+vim.keymap.set("n", "<M-k>", function()
+	pcall(vim.cmd.cprev)
+	vim.cmd("normal! zz")
+end)
 
 
 -- Newline keybinds
