@@ -58,6 +58,7 @@ end
 beautiful.init(gears.filesystem.get_configuration_dir() .. "theme/default/theme.lua")
 local border_color = beautiful.border_focus
 local border_colored = true
+beautiful.border_focus = "#000000"
 
 -- This is used later as the default terminal and editor to run.
 terminal = "ghostty"
