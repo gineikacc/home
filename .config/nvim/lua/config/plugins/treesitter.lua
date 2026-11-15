@@ -38,6 +38,11 @@ return {
 						return
 					end
 
+					vim.treesitter.stop(buf)
+					if vim.bo[buf].syntax == "" and vim.bo[buf].filetype ~= "" then
+						vim.bo[buf].syntax = vim.bo[buf].filetype
+					end
+
 					-- Match the old auto_install behavior for parsers not in the list above.
 					local lang = vim.treesitter.language.get_lang(vim.bo[buf].filetype)
 					if lang and not installing[lang] and require("nvim-treesitter.parsers")[lang] then
