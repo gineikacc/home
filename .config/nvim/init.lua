@@ -327,7 +327,12 @@ require("config.translation").setup()
 
 -- Personal procedures (see lua/procedures.lua). Each function in that file is
 -- exposed as a global so it can be run from the command line, e.g.
--- `:lua weave(1)`, without a module prefix.
+-- `:lua weave()`, without a module prefix.
 for name, fn in pairs(require("procedures")) do
 	_G[name] = fn
 end
+
+-- Weave the two halves of a 2N-line visual selection in place.
+vim.keymap.set("v", "<leader>w", function()
+	weave()
+end, { desc = "Weave selected halves" })
